@@ -1,1824 +1,1967 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Dict, List, Tuple
+
+import pandas as pd
 import streamlit as st
 
-# ── Page config ──────────────────────────────────────────────────────────────
+
 st.set_page_config(
-    page_title="인공지능 이론 및 응용 세미나 Project 1조",
-    page_icon="🔍",
+    page_title="GROVER Explainer",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 
-def render_formula(latex: str, note: str = "") -> None:
-    st.latex(latex)
-    if note:
-        st.markdown(
-            f"<p class='formula-note'>{note}</p>",
-            unsafe_allow_html=True,
+# -----------------------------
+# Data and helper functions
+# -----------------------------
+
+
+def inject_css() -> None:
+    st.markdown(
+        """
+        <style>
+        @import url('https://cdn.jsdelivr.net/npm/pretendard/dist/web/static/pretendard.css');
+
+        :root {
+            --bg-page: #f4f0e8;
+            --bg-main: #f7f4ee;
+            --surface: #ffffff;
+            --surface-soft: #fcfaf6;
+            --surface-muted: #f1ebe0;
+            --line: #d8d0c2;
+            --line-strong: #bfae97;
+            --ink: #191714;
+            --text: #38342e;
+            --muted: #6e675e;
+            --accent: #94633f;
+            --accent-soft: #efe0cf;
+            --accent-deep: #234f47;
+            --accent-mist: #eef4f2;
+            --danger: #a24636;
+            --danger-bg: #fbf1ee;
+            --success: #35624b;
+            --success-bg: #f1f7f3;
+            --shadow-lg: 0 22px 52px rgba(25, 23, 20, 0.08);
+            --shadow-md: 0 14px 30px rgba(25, 23, 20, 0.06);
+            --shadow-sm: 0 8px 18px rgba(25, 23, 20, 0.05);
+            --radius-xl: 28px;
+            --radius-lg: 20px;
+            --radius-md: 16px;
+            --radius-sm: 12px;
+        }
+
+        html, body {
+            font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+                         "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+        }
+
+        .stApp {
+            background: var(--bg-page);
+            color: var(--text);
+        }
+
+        [data-testid="stAppViewContainer"] {
+            background:
+                radial-gradient(circle at top right, rgba(148, 99, 63, 0.07), transparent 28%),
+                linear-gradient(180deg, #f7f4ee 0%, #f3eee6 100%);
+        }
+
+        [data-testid="stHeader"] {
+            background: rgba(247, 244, 238, 0.82);
+            border-bottom: 1px solid rgba(25, 23, 20, 0.06);
+            backdrop-filter: blur(8px);
+        }
+
+        .main .block-container {
+            max-width: 1240px;
+            padding-top: 2.2rem;
+            padding-bottom: 3.5rem;
+        }
+
+        .main * {
+            font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+                         "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+        }
+
+        .main h1, .main h2, .main h3, .main h4 {
+            color: var(--ink);
+            letter-spacing: -0.02em;
+        }
+
+        .main h2 {
+            margin-top: 0.3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(25, 23, 20, 0.08);
+            font-size: 1.6rem;
+        }
+
+        .main h3 {
+            margin-top: 1.8rem;
+            margin-bottom: 0.8rem;
+            font-size: 1.08rem;
+        }
+
+        .main p, .main li, .main label, .main .stCaption, .main .stMarkdown {
+            color: var(--muted);
+            line-height: 1.72;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        [data-testid="column"] {
+            display: flex;
+        }
+
+        [data-testid="column"] > div {
+            width: 100%;
+            height: 100%;
+        }
+
+        .block-frame {
+            display: flex;
+            height: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top right, rgba(148, 99, 63, 0.14), transparent 33%),
+                linear-gradient(135deg, #fffaf3 0%, #ffffff 56%, #f1ebe0 100%);
+            padding: 2.15rem 2rem 1.95rem 2rem;
+            border-radius: var(--radius-xl);
+            color: var(--ink);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(25, 23, 20, 0.11);
+        }
+        .hero::after {
+            content: "";
+            position: absolute;
+            right: -52px;
+            top: -70px;
+            width: 220px;
+            height: 220px;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(35, 79, 71, 0.16), rgba(35, 79, 71, 0) 68%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            position: relative;
+            z-index: 1;
+            font-size: 2.35rem;
+            margin: 0.25rem 0 0.78rem 0;
+            line-height: 1.2;
+            color: var(--ink);
+            max-width: 860px;
+        }
+        .hero p {
+            position: relative;
+            z-index: 1;
+            font-size: 1.01rem;
+            line-height: 1.75;
+            margin-bottom: 0.1rem;
+            color: var(--text);
+            max-width: 800px;
+        }
+        .eyebrow {
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 0.45rem 0.76rem;
+            border-radius: 999px;
+            border: 1px solid rgba(25, 23, 20, 0.06);
+            background: var(--ink);
+            color: white;
+            margin-bottom: 0.7rem;
+        }
+        .badge-row {
+            margin: 0.9rem 0 0.1rem 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.36rem 0.76rem;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: #4d3a2b;
+            font-size: 0.81rem;
+            font-weight: 600;
+            border: 1px solid #dcc7af;
+        }
+        .section-card {
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.2rem 1.1rem 1.2rem;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow-md);
+            height: 100%;
+        }
+        .section-card::before {
+            content: "";
+            position: absolute;
+            left: 1.2rem;
+            top: 0;
+            width: 76px;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+        .section-card h3 {
+            margin-top: 0;
+            margin-bottom: 0.7rem;
+            font-size: 1.08rem;
+            color: var(--ink);
+        }
+        .section-card p, .section-card li {
+            color: var(--text);
+            line-height: 1.72;
+            font-size: 0.96rem;
+        }
+        .section-card ul {
+            padding-left: 1.15rem;
+            margin-bottom: 0;
+        }
+        .mini-card {
+            flex: 1;
+            background: linear-gradient(180deg, var(--surface) 0%, var(--surface-soft) 100%);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.05rem;
+            border: 1px solid rgba(191, 174, 151, 0.72);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+            height: 100%;
+        }
+        .mini-card strong {
+            color: var(--ink);
+            display: block;
+            font-size: 0.98rem;
+            margin-bottom: 0.12rem;
+        }
+        .mini-card p {
+            margin: 0.42rem 0 0 0;
+            color: var(--text);
+            line-height: 1.65;
+            font-size: 0.94rem;
+        }
+        .callout {
+            border-left: 6px solid var(--accent-deep);
+            background: linear-gradient(135deg, var(--accent-mist) 0%, #ffffff 100%);
+            padding: 1.05rem 1.15rem;
+            border-radius: var(--radius-md);
+            color: #1d3935;
+            margin: 0.45rem 0 1rem 0;
+            border: 1px solid rgba(35, 79, 71, 0.14);
+            box-shadow: var(--shadow-sm);
+        }
+        .callout strong {
+            color: #1d3935;
+        }
+        .step-card {
+            flex: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #faf6ef 100%);
+            border-radius: var(--radius-lg);
+            padding: 1.1rem 1rem 1rem 1rem;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow-md);
+            height: 100%;
+        }
+        .step-num {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ink);
+            color: white;
+            font-weight: 700;
+            margin-bottom: 0.72rem;
+            font-size: 0.95rem;
+            box-shadow: 0 10px 20px rgba(25, 23, 20, 0.16);
+        }
+        .step-card h4 {
+            margin: 0 0 0.4rem 0;
+            color: var(--ink);
+            font-size: 1rem;
+        }
+        .step-card p {
+            margin: 0;
+            color: var(--text);
+            line-height: 1.65;
+            font-size: 0.93rem;
+        }
+        .report-box {
+            flex: 1;
+            background: linear-gradient(180deg, #ffffff 0%, #fbf8f2 100%);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 1.2rem 1.3rem;
+            box-shadow: var(--shadow-md);
+        }
+        .report-box h4 {
+            margin-top: 0;
+            color: var(--ink);
+        }
+        .report-pill {
+            display: inline-block;
+            padding: 0.3rem 0.66rem;
+            border-radius: 999px;
+            background: #eee6d8;
+            color: #4b3b2d;
+            border: 1px solid #dcccb5;
+            font-size: 0.82rem;
+            margin-right: 0.45rem;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+        }
+        .formula-box {
+            background: rgba(25, 23, 20, 0.03);
+            border: 1px solid rgba(25, 23, 20, 0.08);
+            border-radius: var(--radius-md);
+            padding: 0.9rem 1rem;
+            margin-top: 0.7rem;
+        }
+        .danger-box {
+            border-left: 6px solid var(--danger);
+            background: var(--danger-bg);
+            padding: 1rem 1.05rem;
+            border-radius: var(--radius-md);
+            color: #6f2d22;
+            margin: 0.65rem 0;
+            border: 1px solid rgba(162, 70, 54, 0.16);
+            box-shadow: var(--shadow-sm);
+        }
+        .success-box {
+            border-left: 6px solid var(--success);
+            background: var(--success-bg);
+            padding: 1rem 1.05rem;
+            border-radius: var(--radius-md);
+            color: #264a38;
+            margin: 0.65rem 0;
+            border: 1px solid rgba(53, 98, 75, 0.15);
+            box-shadow: var(--shadow-sm);
+        }
+        .sidebar-brand {
+            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+            border-radius: 20px;
+            padding: 1.1rem 1.05rem 1rem 1.05rem;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+            margin-bottom: 1rem;
+        }
+        .sidebar-kicker {
+            display: inline-block;
+            color: #d6c6b1;
+            font-size: 0.74rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 0.55rem;
+        }
+        .sidebar-brand h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.35rem;
+            color: #faf7f2;
+            letter-spacing: -0.03em;
+        }
+        .sidebar-brand p {
+            margin: 0;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.92rem;
+            line-height: 1.65;
+        }
+        .sidebar-note {
+            background: rgba(255,255,255,0.04);
+            border-radius: 16px;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.82);
+        }
+        .footer-note {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        [data-testid="stSidebar"] {
+            background:
+                radial-gradient(circle at top left, rgba(148, 99, 63, 0.18), transparent 26%),
+                linear-gradient(180deg, #111315 0%, #17191d 100%);
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+
+        [data-testid="stSidebar"] :where(
+            p, span, label, li, a, div, button, input, textarea, select, summary, h1, h2, h3, h4, h5, h6
+        ) {
+            font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+                         "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+        }
+
+        .material-symbols-rounded,
+        .material-symbols-outlined,
+        .material-icons,
+        .material-icons-round,
+        [class^="material-symbols"],
+        [class*=" material-symbols"] {
+            font-family: "Material Symbols Rounded", "Material Symbols Outlined", sans-serif !important;
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] p,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] li,
+        [data-testid="stSidebar"] span,
+        [data-testid="stSidebar"] .stCaption {
+            color: rgba(255,255,255,0.78);
+        }
+
+        [data-testid="stSidebar"] .stMarkdown h3 {
+            color: #f6f3ef;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"] {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 0.55rem 0.72rem;
+            margin-bottom: 0.45rem;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.16);
+            transform: translateY(-1px);
+        }
+
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+            background: #f3ede2;
+            border-color: #f3ede2;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p,
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) span {
+            color: #17191d !important;
+            font-weight: 600;
+        }
+
+        [data-testid="stSidebar"] details {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+        }
+
+        [data-testid="stSidebar"] details summary,
+        [data-testid="stSidebar"] details summary * {
+            color: #f6f3ef !important;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 0.5rem;
+            padding: 0;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            height: auto;
+            padding: 0.55rem 0.92rem;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.72);
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: var(--ink);
+            border-color: var(--ink);
+            color: #ffffff;
+        }
+
+        .main [data-testid="stRadio"] div[role="radiogroup"] {
+            gap: 0.45rem;
+        }
+
+        .main [data-testid="stRadio"] label[data-baseweb="radio"] {
+            border: 1px solid var(--line);
+            background: rgba(255,255,255,0.82);
+            border-radius: 999px;
+            padding: 0.38rem 0.74rem;
+        }
+
+        .main [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
+            background: var(--ink);
+            border-color: var(--ink);
+        }
+
+        .main [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p,
+        .main [data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) span {
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+
+        div[data-baseweb="select"] > div {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.92);
+            box-shadow: none;
+        }
+
+        [data-testid="stDataFrame"] {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.94);
+            box-shadow: var(--shadow-sm);
+        }
+
+        [data-testid="stMetric"] {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 0.95rem 1rem 0.9rem 1rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--ink);
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--muted);
+        }
+
+        .stCodeBlock, pre {
+            border-radius: 16px !important;
+            border: 1px solid rgba(25, 23, 20, 0.10);
+        }
+
+        details[data-testid="stExpander"] {
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.82);
+            box-shadow: var(--shadow-sm);
+        }
+
+        details[data-testid="stExpander"] summary {
+            padding: 0.15rem 0.1rem;
+        }
+
+        @media (max-width: 960px) {
+            .main .block-container {
+                padding-top: 1.6rem;
+                padding-bottom: 2.6rem;
+            }
+            .hero {
+                padding: 1.7rem 1.35rem 1.55rem 1.35rem;
+            }
+            .hero h1 {
+                font-size: 1.9rem;
+            }
+            .block-frame {
+                margin-bottom: 0.85rem;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def badge_row(labels: List[str]) -> None:
+    badges = "".join(f'<span class="badge">{label}</span>' for label in labels)
+    st.markdown(f'<div class="badge-row">{badges}</div>', unsafe_allow_html=True)
+
+
+def card(title: str, body: str) -> None:
+    st.markdown(
+        f"""
+        <div class="block-frame">
+            <div class="section-card">
+                <h3>{title}</h3>
+                {body}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def mini_card(title: str, body: str) -> None:
+    st.markdown(
+        f"""
+        <div class="block-frame">
+            <div class="mini-card">
+                <strong>{title}</strong>
+                <p>{body}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def step_box(num: int, title: str, body: str) -> None:
+    st.markdown(
+        f"""
+        <div class="block-frame">
+            <div class="step-card">
+                <div class="step-num">{num}</div>
+                <h4>{title}</h4>
+                <p>{body}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def callout(text: str) -> None:
+    st.markdown(f'<div class="callout">{text}</div>', unsafe_allow_html=True)
+
+
+def success_box(text: str) -> None:
+    st.markdown(f'<div class="success-box">{text}</div>', unsafe_allow_html=True)
+
+
+def danger_box(text: str) -> None:
+    st.markdown(f'<div class="danger-box">{text}</div>', unsafe_allow_html=True)
+
+
+def report_box(direct_answer: str, claims: List[str], caveat: str) -> None:
+    claim_html = "".join(f"<li>{claim}</li>" for claim in claims)
+    st.markdown(
+        f"""
+        <div class="block-frame">
+            <div class="report-box">
+                <div>
+                    <span class="report-pill">Direct Answer</span>
+                    <span class="report-pill">Supporting Claims</span>
+                    <span class="report-pill">Caveat</span>
+                </div>
+                <h4>예시 Structured Report</h4>
+                <p><strong>Direct Answer</strong><br>{direct_answer}</p>
+                <p><strong>Supporting Claims</strong></p>
+                <ul>{claim_html}</ul>
+                <p><strong>Caveat / Limitation</strong><br>{caveat}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def load_raw_document() -> str:
+    candidates = [
+        Path(__file__).with_name("project_grover.md"),
+        Path.cwd() / "project_grover.md",
+        Path(__file__).with_name("GROVER_NL2SQL_project_plan.md"),
+        Path.cwd() / "GROVER_NL2SQL_project_plan.md",
+        Path("/mnt/data/GROVER_NL2SQL_project_plan.md"),
+    ]
+    for path in candidates:
+        if path.exists():
+            try:
+                return path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+    return ""
+
+
+PIPELINE_STEPS: Dict[str, Dict[str, str]] = {
+    "1. Question Typing": {
+        "goal": "질문이 '무엇이 얼마인가'를 묻는지(descriptive), 아니면 '왜 그렇게 되었는가'를 묻는지(diagnostic)를 먼저 분류합니다.",
+        "why": "질문 유형이 다르면 필요한 evidence도 달라집니다. '총매출' 질문에는 직접 답을 주는 SQL이 중요하지만, '왜 감소했는가' 질문에는 추세, 세그먼트 분해, driver 분석이 추가로 필요합니다.",
+        "input": "자연어 질문 q",
+        "output": "질문 유형 + 필요한 analytical slot 목록",
+        "example": "'지난 분기 매출이 왜 감소했는가?' → diagnostic. 따라서 direct answer + trend + segment breakdown + driver + caveat가 필요합니다.",
+        "analogy": "의사도 먼저 '열이 나는가'와 '왜 열이 나는가'를 구분합니다. 진단 질문은 검사 종류가 더 많아집니다.",
+        "risk": "이 단계가 틀리면, 시스템이 사용자가 원하는 답의 깊이를 잘못 맞춥니다. 예를 들어 diagnostic 질문을 descriptive처럼 처리하면 숫자만 말하고 원인을 설명하지 못합니다.",
+    },
+    "2. Schema / Value Retrieval": {
+        "goal": "큰 데이터베이스에서 실제로 관련 있는 테이블, 컬럼, 값만 골라서 문맥을 줄입니다.",
+        "why": "현실 데이터베이스는 컬럼 수가 많습니다. 관련 없는 스키마를 모두 보여주면 모델이 헷갈리고, 쿼리도 길어지고, 실행 효율도 나빠집니다.",
+        "input": "질문 q + 전체 스키마 S + 후보 값들",
+        "output": "pruned schema + grounded value candidates",
+        "example": "'매출 감소' 질문이라면 sales, region, customer_segment, order_date, revenue 같은 요소를 우선 회수하고, 인사 테이블 같은 비관련 스키마는 제외합니다.",
+        "analogy": "도서관 전체를 뒤지지 않고, 먼저 해당 주제의 서가만 꺼내서 보는 과정과 같습니다.",
+        "risk": "retrieval이 약하면 필요한 테이블을 놓치고, retrieval이 너무 넓으면 모델이 noise에 휩쓸립니다.",
+    },
+    "3. SQL Bundle Generation": {
+        "goal": "main SQL 1개만 만들지 않고, 최종 설명에 필요한 support SQL까지 함께 생성합니다.",
+        "why": "diagnostic 질문은 보통 하나의 aggregate SQL만으로는 충분하지 않습니다. 감소율은 알 수 있어도 왜 감소했는지는 별도 evidence가 필요합니다.",
+        "input": "질문 유형 + pruned schema + retrieved values",
+        "output": "SQL bundle Z = {main SQL, support SQLs}",
+        "example": "main SQL은 분기별 KPI 차이를 구하고, support SQL은 시간 추세, 지역/세그먼트 breakdown, top driver를 계산합니다.",
+        "analogy": "보고서를 쓸 때 본문 한 문장만 쓰는 것이 아니라, 표·그래프·근거 표본을 함께 모으는 것과 같습니다.",
+        "risk": "support SQL이 없으면 결과 보고서가 얕고 취약해집니다. 반대로 support SQL이 너무 많으면 비용이 커집니다.",
+    },
+    "4. Execution and Verification": {
+        "goal": "생성된 SQL bundle을 실제 DB에 실행하고, 문법 오류·빈 결과·사소한 결과를 점검합니다.",
+        "why": "문법만 맞아도 실무적으로 쓸모없는 결과가 나올 수 있습니다. 예를 들어 빈 결과는 분석 근거가 되지 못하고, 한 행만 나오는 표로는 driver 분석이 불가능할 수 있습니다.",
+        "input": "SQL bundle Z + 데이터베이스 D",
+        "output": "실행 결과 R + 검증 상태",
+        "example": "breakdown query가 빈 결과를 내면, 다른 grouping 기준으로 retry하거나 candidate를 교체합니다.",
+        "analogy": "계산식을 적는 것과 실제로 계산해 검산하는 것은 다릅니다.",
+        "risk": "실행은 되었지만 분석에 불충분한 'trivial result'를 놓치면 report가 과장되거나 공허해질 수 있습니다.",
+    },
+    "5. Structured Report Generation": {
+        "goal": "결과 테이블을 그대로 던져주지 않고, direct answer + supporting claims + caveat 형태의 구조화된 보고서를 생성합니다.",
+        "why": "자유로운 장문 응답은 평가하기 어렵습니다. claim 단위로 쪼개서 검증하려면 보고서 형식이 어느 정도 구조화되어야 합니다.",
+        "input": "실행 결과 R",
+        "output": "최종 report y",
+        "example": "'주된 원인은 북미 enterprise segment의 부진'이라는 direct answer를 쓰고, 수치 근거 claim 2~3개와 caveat 1개를 덧붙입니다.",
+        "analogy": "표를 읽어서 발표 슬라이드용 핵심 메시지로 번역하는 단계입니다.",
+        "risk": "구조가 없으면 평가는 주관적으로 흐르고, 모델이 그럴듯한 과장을 하기 쉬워집니다.",
+    },
+    "6. Report-aware Selection / Verification": {
+        "goal": "여러 candidate bundle 중에서 SQL만 잘 맞는 후보가 아니라, 최종 보고서 품질이 가장 좋은 후보를 선택합니다.",
+        "why": "SQL-level score가 비슷해도 insight-level quality는 크게 다를 수 있습니다. 근거가 더 풍부한 후보가 좋은 보고서를 만듭니다.",
+        "input": "candidate bundles + 각 bundle로부터 생성된 report",
+        "output": "최종 선택된 bundle/report",
+        "example": "Candidate A와 C가 둘 다 실행은 성공했지만, B만 trend와 segment evidence를 함께 제공한다면 B를 선택합니다.",
+        "analogy": "정답처럼 보이는 계산식 여러 개 중, 실제 발표 자료로 가장 설득력 있는 버전을 고르는 과정입니다.",
+        "risk": "selector가 SQL 정확도만 보면, 근거가 빈약한 답변을 뽑을 수 있습니다.",
+    },
+}
+
+
+def get_example_tables() -> Dict[str, pd.DataFrame]:
+    trend = pd.DataFrame(
+        {
+            "월": ["1월", "2월", "3월", "4월", "5월", "6월"],
+            "매출(백만 달러)": [128, 125, 121, 118, 109, 103],
+        }
+    )
+
+    breakdown = pd.DataFrame(
+        {
+            "지역": ["북미", "북미", "유럽", "APAC"],
+            "세그먼트": ["Enterprise", "SMB", "Enterprise", "Enterprise"],
+            "전분기 매출": [72, 31, 44, 37],
+            "지난 분기 매출": [45, 29, 41, 35],
+            "변화율": ["-37.5%", "-6.5%", "-6.8%", "-5.4%"],
+        }
+    )
+
+    driver = pd.DataFrame(
+        {
+            "드라이버 후보": ["북미 Enterprise", "가격 인상 제품군 A", "유럽 SMB", "신규 고객 유입 감소"],
+            "기여 감소액": [27, 8, 3, 2],
+            "설명": [
+                "전체 감소의 가장 큰 비중",
+                "상위 제품군 매출 하락",
+                "영향은 있으나 규모는 작음",
+                "부가적인 요인 가능성",
+            ],
+        }
+    )
+
+    claims = pd.DataFrame(
+        {
+            "claim 유형": ["numeric", "comparison", "ranking", "diagnostic"],
+            "예시": [
+                "북미 매출은 전분기 대비 37.5% 감소했다.",
+                "북미 감소폭이 유럽보다 더 크다.",
+                "가장 큰 감소 요인은 북미 Enterprise이다.",
+                "주된 원인은 북미 Enterprise 부진이다.",
+            ],
+            "검증 방식": [
+                "표에서 수치를 직접 계산",
+                "두 수치의 관계를 비교",
+                "정렬 및 top-1 확인",
+                "수치 evidence + judge/human audit 결합",
+            ],
+        }
+    )
+
+    candidate_table = pd.DataFrame(
+        {
+            "Candidate": ["A", "B", "C"],
+            "구성": [
+                "main SQL만 생성",
+                "main + trend + breakdown + driver",
+                "main + trend만 생성",
+            ],
+            "SQL-Level 예상": [0.90, 0.88, 0.91],
+            "Report 품질 예상": [0.49, 0.86, 0.68],
+            "선택 이유": [
+                "숫자는 맞지만 설명이 얕음",
+                "질문 의도에 맞는 근거가 가장 풍부함",
+                "방향성은 보이나 driver 설명이 부족함",
+            ],
+        }
+    )
+
+    datasets = pd.DataFrame(
+        {
+            "Dataset": [
+                "BIRD Mini-Dev V2",
+                "BIRD Dev / selected split",
+                "CORGI",
+                "BI-Bench",
+                "Spider 2.0-Lite",
+                "GROVER-Bridge",
+            ],
+            "역할": [
+                "빠른 개발 및 반복 실험",
+                "SQL correctness + efficiency 검증",
+                "Insight-Level 핵심 평가",
+                "BI taxonomy와 framing 참고",
+                "robustness stress test",
+                "human alignment 검증",
+            ],
+            "설명": [
+                "빠르게 실험 돌리기 좋은 development benchmark",
+                "최종 SQL/DB-level 성능 확인용",
+                "business-domain high-order query에 적합",
+                "질문 유형 분류 체계를 잡을 때 유용",
+                "현실 workflow 복잡도에 대한 보조 실험",
+                "사람 판단과 metric 정렬을 검증하는 소규모 subset",
+            ],
+        }
+    )
+
+    baselines = pd.DataFrame(
+        {
+            "시스템": [
+                "Baseline A",
+                "Baseline B",
+                "Baseline C",
+                "Proposed: GROVER-Agent",
+            ],
+            "설정": [
+                "One-shot NL2SQL + direct answer",
+                "Retrieval-pruned single SQL",
+                "Multi-candidate SQL + SQL-only selector",
+                "Evidence-bundled SQL + report-aware selector",
+            ],
+            "검증 포인트": [
+                "가장 단순한 출발점",
+                "retrieval 자체의 효과",
+                "candidate generation의 효과",
+                "bundle + report-aware selection의 합산 효과",
+            ],
+        }
+    )
+
+    glossary = pd.DataFrame(
+        {
+            "용어": [
+                "NL2SQL",
+                "Evidence Bundle",
+                "Support SQL",
+                "Structured Report",
+                "Report-aware Selector",
+                "TG-F1",
+                "NumAcc",
+                "Coverage",
+                "Intent Alignment",
+                "GROVER-Bridge",
+            ],
+            "뜻": [
+                "자연어 질문을 SQL로 바꾸는 문제 설정",
+                "최종 해석에 필요한 SQL 묶음",
+                "main SQL을 보조하는 추가 evidence query",
+                "Direct Answer/Claims/Caveat로 분리된 보고서 형식",
+                "SQL만이 아니라 보고서 품질로 후보를 고르는 선택기",
+                "Table-grounded precision/recall 기반 F1",
+                "숫자 claim의 정확도",
+                "질문 유형별 필수 슬롯 충족도",
+                "답변이 질문 의도에 맞는 정도",
+                "사람이 검증한 소규모 평가 subset",
+            ],
+        }
+    )
+
+    return {
+        "trend": trend,
+        "breakdown": breakdown,
+        "driver": driver,
+        "claims": claims,
+        "candidate_table": candidate_table,
+        "datasets": datasets,
+        "baselines": baselines,
+        "glossary": glossary,
+    }
+
+
+def compute_insight_score(
+    tg_f1: float,
+    num_acc: float,
+    cov: float,
+    ia: float,
+    weights: Tuple[float, float, float, float],
+) -> float:
+    g1, g2, g3, g4 = weights
+    return g1 * tg_f1 + g2 * num_acc + g3 * cov + g4 * ia
+
+
+def normalize_weights(raw_weights: List[int]) -> Tuple[float, float, float, float]:
+    total = sum(raw_weights)
+    if total == 0:
+        return 0.35, 0.30, 0.20, 0.15
+    return tuple(w / total for w in raw_weights)  # type: ignore[return-value]
+
+
+TABLES = get_example_tables()
+RAW_DOCUMENT = load_raw_document()
+
+
+# -----------------------------
+# Section renderers
+# -----------------------------
+
+
+def render_home() -> None:
+    st.markdown(
+        """
+        <div class="hero">
+            <div class="eyebrow">GROVER EXPLAINER</div>
+            <h1>SQL을 잘 만드는지에서, 결과를 잘 설명하는지로</h1>
+            <p>
+                이 앱은 업로드한 GROVER 프로젝트 문서를 처음 보는 사람도 읽기 쉽도록 다시 구성한 설명 페이지입니다.
+                핵심 메시지는 단순합니다. <strong>좋은 NL2SQL 시스템</strong>은 SQL만 맞히는 시스템이 아니라,
+                <strong>실행 결과를 근거로 믿을 수 있는 분석 보고서를 만드는 시스템</strong>이어야 합니다.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    badge_row(["End-to-End", "Evidence-Bundled", "Table-Grounded", "Human-Verified"])
+
+    st.markdown("### 이 문서가 바꾸는 질문")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        card(
+            "기존 질문",
+            "<p><strong>'정답 SQL을 생성했는가?'</strong>가 중심입니다. 실행 성공, Exact Match, Test Suite 등은 중요하지만, 최종 분석의 신뢰성까지는 말해주지 못합니다.</p>",
+        )
+    with col2:
+        card(
+            "바뀐 질문",
+            "<p><strong>'실행 결과를 바탕으로 유의미하고 검증 가능한 인사이트를 만들었는가?'</strong>를 함께 묻습니다. 즉 SQL correctness를 넘어 report usefulness를 봅니다.</p>",
+        )
+    with col3:
+        card(
+            "GROVER의 해답",
+            "<p>SQL-Level, DB-Level, Insight-Level의 <strong>3단 평가</strong>를 두고, main SQL + support SQL bundle을 기반으로 table-grounded report를 평가합니다.</p>",
         )
 
-# ── Global CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-/* ---- fonts & theme ---- */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+    st.markdown("### 30초 요약")
+    callout(
+        "<strong>핵심 재정의</strong><br>NL2SQL을 <strong>q → z₀</strong> 문제로 보지 않고, <strong>q → Z → R → y</strong> 문제로 봅니다.<br><br>"
+        "- q: 사용자의 자연어 질문<br>"
+        "- Z: main SQL과 support SQL이 묶인 bundle<br>"
+        "- R: 실제 DB 실행 결과 테이블들<br>"
+        "- y: 최종 자연어 report"
+    )
 
-:root {
-    --bg: #f3ede2;
-    --bg-soft: #f8f4ec;
-    --surface: rgba(252, 249, 242, 0.9);
-    --surface-strong: #fcfaf5;
-    --ink: #1f2625;
-    --muted: #5f6866;
-    --line: #d6cdbf;
-    --accent: #7b4c3a;
-    --accent-soft: rgba(123, 76, 58, 0.14);
-    --accent-cool: #315a59;
-    --accent-cool-soft: rgba(49, 90, 89, 0.1);
-    --accent-olive: #6c7557;
-    --accent-olive-soft: rgba(108, 117, 87, 0.11);
-    --accent-gold: #a17343;
-    --accent-gold-soft: rgba(161, 115, 67, 0.11);
-    --accent-plum: #6d586d;
-    --accent-plum-soft: rgba(109, 88, 109, 0.1);
-    --danger: #a95a58;
-    --danger-soft: rgba(169, 90, 88, 0.1);
-    --shadow: 0 12px 28px rgba(34, 31, 28, 0.06);
-}
+    st.markdown("### 한눈에 보는 6단계 파이프라인")
+    row1 = st.columns(3)
+    row2 = st.columns(3)
+    titles = list(PIPELINE_STEPS.keys())
+    descs = [
+        "질문이 descriptive인지 diagnostic인지 구분",
+        "관련 schema/value만 골라 context 축소",
+        "main SQL + support SQL 묶음 생성",
+        "실행 후 오류·빈 결과·trivial result 검증",
+        "결과를 structured report로 변환",
+        "보고서 품질 기준으로 최종 후보 선택",
+    ]
+    for idx, (col, title, desc) in enumerate(zip(row1 + row2, titles, descs), start=1):
+        with col:
+            step_box(idx, title.split('. ', 1)[1], desc)
 
-html, body, [class*="css"] {
-    font-family: 'Pretendard', sans-serif;
-    color: var(--ink);
-}
+    st.markdown("### 왜 특히 Methodology가 중요한가")
+    left, right = st.columns([1.05, 0.95])
+    with left:
+        card(
+            "이 연구의 실제 중심",
+            "<ul>"
+            "<li>새로운 SQL generator 하나를 제안하는 것이 중심이 아닙니다.</li>"
+            "<li><strong>어떤 evidence를 수집할지</strong>, <strong>그 evidence를 어떻게 report로 만들지</strong>, <strong>그 report를 어떻게 검증할지</strong>가 중심입니다.</li>"
+            "<li>그래서 Methodology는 알고리즘 설명이면서 동시에 평가 철학 설명이기도 합니다.</li>"
+            "</ul>",
+        )
+    with right:
+        card(
+            "처음 읽는 사람이 특히 봐야 할 것",
+            "<ul>"
+            "<li>왜 single SQL이 아니라 SQL bundle인지</li>"
+            "<li>왜 report generation이 별도 모듈인지</li>"
+            "<li>왜 metric이 TG-F1 / NumAcc / Coverage / Intent Alignment로 분해되는지</li>"
+            "<li>왜 human-verified subset이 필요한지</li>"
+            "</ul>",
+        )
 
-.stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stAppViewContainer"] > .main {
-    background:
-        linear-gradient(rgba(123, 76, 58, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(123, 76, 58, 0.04) 1px, transparent 1px),
-        linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
-    background-size: 28px 28px, 28px 28px, auto;
-}
+    st.markdown("### GROVER를 한 장으로 보면")
+    a, b, c = st.columns(3)
+    with a:
+        card(
+            "SQL-Level",
+            "<p><strong>질문:</strong> SQL이 실행적으로 맞는가?<br><strong>대표 metric:</strong> EX, Test Suite, Soft F1<br><strong>의미:</strong> '쿼리 자체'의 정확성</p>",
+        )
+    with b:
+        card(
+            "DB-Level",
+            "<p><strong>질문:</strong> 얼마나 효율적으로 실행되는가?<br><strong>대표 metric:</strong> R-VES 계열, retry 수, DB call 수<br><strong>의미:</strong> '시스템 비용'과 workflow 효율</p>",
+        )
+    with c:
+        card(
+            "Insight-Level",
+            "<p><strong>질문:</strong> 최종 report가 근거 있고 유용한가?<br><strong>대표 metric:</strong> TG-F1, NumAcc, Coverage, IA<br><strong>의미:</strong> '사용자에게 전달되는 분석'의 신뢰성</p>",
+        )
 
-.main .block-container {
-    max-width: 1200px;
-    padding-top: 2.2rem;
-    padding-bottom: 4rem;
-}
+    st.caption("모든 예시 SQL과 결과 테이블은 앱 설명을 위한 illustrative example입니다.")
 
-h1, h2, h3, h4,
-.section-header,
-.subsection-header,
-.hero-title {
-    font-family: 'Pretendard', sans-serif;
-    letter-spacing: -0.02em;
-}
 
-code,
-pre,
-.formula-box,
-.hero-meta-value,
-.stage-code,
-.score-card-value,
-.score-vector {
-    font-family: 'IBM Plex Mono', monospace;
-}
+def render_introduction() -> None:
+    st.markdown("## 1. 연구 배경과 문제의 변화")
+    callout(
+        "<strong>문제의 중심 이동</strong><br>"
+        "예전에는 '질문 하나에 SQL 하나를 얼마나 정확히 만들었는가'가 중심이었습니다."
+        " 이제는 '실제 workflow에서 신뢰할 수 있는 분석을 끝까지 만들었는가'가 더 중요해졌습니다."
+    )
 
-div[data-testid="stLatex"] {
-    background: #232826;
-    border-left: 4px solid var(--accent-gold);
-    padding: 16px 20px;
-    margin: 12px 0;
-}
-div[data-testid="stLatex"] .katex-display {
-    margin: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-div[data-testid="stLatex"] .katex,
-div[data-testid="stLatex"] .katex * {
-    color: #efe5d6 !important;
-}
-.formula-note {
-    color: var(--muted);
-    font-size: 0.84rem;
-    margin: -2px 0 12px;
-    line-height: 1.6;
-}
+    st.markdown("### 흐름이 어떻게 바뀌었나")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        mini_card("초기 NL2SQL", "자연어를 SQL로 바꾸는 semantic parsing 문제가 중심이었습니다. 핵심은 문법과 정답 SQL 매칭이었습니다.")
+    with c2:
+        mini_card("Large schema 시대", "BIRD류 문제 설정에서는 value grounding, large schema, execution efficiency가 중요해졌습니다.")
+    with c3:
+        mini_card("Workflow 확장", "Spider 2.0 계열은 multi-query workflow, enterprise metadata, 긴 문맥을 요구합니다.")
+    with c4:
+        mini_card("Interactive / BI 확장", "BIRD-INTERACT, BI-Bench, CORGI류는 clarification, diagnosis, insight generation까지 문제를 넓힙니다.")
 
-/* ---- sidebar ---- */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #27231f 0%, #181512 100%);
-    border-right: 1px solid rgba(239, 229, 214, 0.14);
-}
-[data-testid="stSidebar"] * {
-    color: #efe5d6 !important;
-}
-[data-testid="stSidebar"] .block-container {
-    padding-top: 1.45rem;
-}
-[data-testid="stSidebar"] .stRadio label {
-    padding: 8px 12px;
-    border: 1px solid transparent;
-    border-radius: 0;
-    transition: background 0.2s, border-color 0.2s;
-}
-[data-testid="stSidebar"] .stRadio label:hover {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(239, 229, 214, 0.18);
-}
+    st.markdown("### 기존 접근의 세 가지 빈틈")
+    v1, v2, v3 = st.columns(3)
+    with v1:
+        card(
+            "1) SQL 자체에 머무르는 평가",
+            "<p>Execution Accuracy와 Test Suite Accuracy는 매우 중요하지만, 이것만으로는 <strong>'이 쿼리 결과를 바탕으로 사용자가 납득할 만한 설명을 했는가'</strong>를 측정할 수 없습니다.</p>",
+        )
+    with v2:
+        card(
+            "2) SQL 이후 단계의 과소연구",
+            "<p>실제 사용자에게 중요한 것은 결과 테이블 그 자체보다 <strong>해석된 의미</strong>입니다. 그런데 많은 시스템은 실행 결과를 그대로 보여주거나 간단한 요약만 붙입니다.</p>",
+        )
+    with v3:
+        card(
+            "3) benchmark와 evaluation noise",
+            "<p>semantic equivalence, annotation ambiguity, static evaluation의 한계 때문에, leaderboard 점수 하나만으로 시스템 품질을 단정하기가 점점 어려워졌습니다.</p>",
+        )
 
-/* ---- hero banner ---- */
-.hero {
-    background: linear-gradient(180deg, rgba(252, 249, 242, 0.96) 0%, rgba(245, 237, 226, 0.92) 100%);
-    border: 1px solid var(--line);
-    border-radius: 0;
-    padding: 42px 42px 36px;
-    margin-bottom: 32px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-}
-.hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        linear-gradient(180deg, rgba(49, 90, 89, 0.08) 0%, transparent 40%),
-        linear-gradient(90deg, transparent 0%, transparent 58%, rgba(49, 90, 89, 0.08) 58%, rgba(49, 90, 89, 0.08) 59%, transparent 59%);
-    pointer-events: none;
-}
-.hero::after {
-    content: "";
-    position: absolute;
-    right: 28px;
-    top: 22px;
-    width: 190px;
-    height: 190px;
-    border-radius: 50%;
-    border: 1px solid rgba(49, 90, 89, 0.16);
-    opacity: 0.9;
-}
-.hero-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 2.1fr) minmax(250px, 1fr);
-    gap: 24px;
-    position: relative;
-    z-index: 1;
-}
-.hero-title {
-    font-size: 3rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1.08;
-    margin-bottom: 12px;
-}
-.hero-subtitle {
-    font-size: 1rem;
-    color: var(--muted);
-    max-width: 720px;
-    line-height: 1.75;
-}
-.hero-badge {
-    display: inline-block;
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent-soft);
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-size: 0.74rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    margin-bottom: 18px;
-    text-transform: uppercase;
-}
-.hero-panel {
-    background: rgba(31, 38, 37, 0.03);
-    border: 1px solid rgba(31, 38, 37, 0.1);
-    padding: 18px 20px;
-    align-self: start;
-}
-.hero-panel-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-}
-.hero-panel-copy {
-    color: var(--ink);
-    font-size: 0.92rem;
-    line-height: 1.75;
-}
-.hero-meta {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 22px;
-}
-.hero-meta-item {
-    padding: 12px 14px;
-    border-top: 1px solid var(--line);
-    background: rgba(252, 249, 242, 0.8);
-}
-.hero-meta-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-.hero-meta-value {
-    margin-top: 7px;
-    font-size: 0.8rem;
-    line-height: 1.6;
-    color: var(--ink);
-}
+    st.markdown("### 예시 질문 하나로 직관 잡기")
+    left, right = st.columns(2)
+    with left:
+        card(
+            "기존 방식이 주는 답",
+            "<p><strong>질문:</strong> '지난 분기 매출이 왜 감소했는가?'</p>"
+            "<p><strong>출력:</strong> 전분기 대비 -12%라는 단일 수치와 aggregate table</p>"
+            "<p><strong>문제:</strong> 감소 사실은 알 수 있어도, 어디서 줄었는지·어떤 세그먼트가 컸는지·얼마나 설명할 수 있는지까지는 알기 어렵습니다.</p>",
+        )
+    with right:
+        card(
+            "GROVER가 주는 답",
+            "<p><strong>출력:</strong> direct answer + trend evidence + segment breakdown + top driver + caveat</p>"
+            "<p><strong>장점:</strong> 사용자는 단순히 숫자를 보는 것이 아니라, <strong>그 숫자를 뒷받침하는 분석 구조</strong>를 함께 받게 됩니다.</p>",
+        )
 
-/* ---- section headers ---- */
-.section-header {
-    position: relative;
-    font-size: 1.42rem;
-    font-weight: 700;
-    color: var(--ink);
-    padding: 0 0 12px 16px;
-    border-bottom: 1px solid var(--line);
-    margin: 10px 0 24px;
-}
-.section-header::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 12px;
-    width: 4px;
-    background: var(--accent-cool);
-}
-.subsection-header {
-    position: relative;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin-top: 30px;
-    margin-bottom: 12px;
-    padding-left: 14px;
-}
-.subsection-header::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 4px;
-    width: 3px;
-    background: var(--accent);
-}
+    st.markdown("### 문서의 세 가지 핵심 질문")
+    q1, q2, q3 = st.columns(3)
+    with q1:
+        mini_card("Q1. SQL generation", "최종 report에 필요한 evidence를 더 잘 모으려면 single SQL 대신 어떤 generation 전략을 써야 하는가?")
+    with q2:
+        mini_card("Q2. Table analysis", "실행 결과를 바탕으로 LLM이 더 신뢰할 수 있는 insight를 생성하려면 어떤 intermediate representation이 필요한가?")
+    with q3:
+        mini_card("Q3. Evaluation", "SQL correctness를 넘어 report의 충실성·유용성·groundedness를 어떻게 정량화할 것인가?")
 
-/* ---- info / highlight cards ---- */
-.card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0;
-    padding: 22px 24px;
-    margin-bottom: 18px;
-    box-shadow: var(--shadow);
-}
-.card-blue {
-    background: linear-gradient(180deg, rgba(49, 90, 89, 0.06), rgba(252, 249, 242, 0.94));
-    border-left: 4px solid var(--accent-cool);
-}
-.card-green {
-    background: linear-gradient(180deg, rgba(108, 117, 87, 0.08), rgba(252, 249, 242, 0.94));
-    border-left: 4px solid var(--accent-olive);
-}
-.card-purple {
-    background: linear-gradient(180deg, rgba(109, 88, 109, 0.08), rgba(252, 249, 242, 0.94));
-    border-left: 4px solid var(--accent-plum);
-}
-.card-orange {
-    background: linear-gradient(180deg, rgba(161, 115, 67, 0.08), rgba(252, 249, 242, 0.94));
-    border-left: 4px solid var(--accent-gold);
-}
-.card-red {
-    background: linear-gradient(180deg, rgba(169, 90, 88, 0.08), rgba(252, 249, 242, 0.94));
-    border-left: 4px solid var(--danger);
-}
 
-/* ---- pipeline / stage cards ---- */
-.pipeline-step {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-    padding: 18px 20px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 0;
-    margin-bottom: 12px;
-    box-shadow: var(--shadow);
-}
-.step-number {
-    min-width: 38px;
-    height: 38px;
-    background: var(--accent-cool);
-    color: #f4ede0;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.95rem;
-}
-.step-content h4 {
-    margin: 0 0 4px;
-    color: var(--ink);
-    font-size: 0.98rem;
-    font-weight: 700;
-}
-.step-content p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.9rem;
-    line-height: 1.65;
-}
-.stage-card {
-    min-height: 148px;
-    padding: 18px 16px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-top: 3px solid var(--accent-cool);
-    box-shadow: var(--shadow);
-}
-.stage-index {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-.stage-title {
-    font-size: 0.94rem;
-    font-weight: 700;
-    color: var(--ink);
-    margin: 10px 0 6px;
-    line-height: 1.4;
-}
-.stage-code {
-    display: inline-block;
-    font-size: 0.75rem;
-    color: var(--accent-cool);
-    background: var(--accent-cool-soft);
-    padding: 4px 8px;
-    margin-bottom: 10px;
-}
-.stage-copy {
-    color: var(--muted);
-    font-size: 0.82rem;
-    line-height: 1.55;
-}
 
-/* ---- metric level cards ---- */
-.metric-level {
-    border-radius: 0;
-    padding: 22px 24px;
-    margin-bottom: 20px;
-    border: 1px solid var(--line);
-    border-left: 5px solid;
-    box-shadow: var(--shadow);
-}
-.level-sql {
-    background: linear-gradient(180deg, rgba(49, 90, 89, 0.07), rgba(252, 249, 242, 0.92));
-    border-color: var(--accent-cool);
-}
-.level-db {
-    background: linear-gradient(180deg, rgba(108, 117, 87, 0.08), rgba(252, 249, 242, 0.92));
-    border-color: var(--accent-olive);
-}
-.level-insight {
-    background: linear-gradient(180deg, rgba(109, 88, 109, 0.08), rgba(252, 249, 242, 0.92));
-    border-color: var(--accent-plum);
-}
-.metric-level h3 {
-    margin: 0 0 8px;
-    font-size: 1.08rem;
-    font-weight: 700;
-}
-.metric-level p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.9rem;
-    line-height: 1.7;
-}
+def render_methodology() -> None:
+    st.markdown("## 2. Methodology")
+    st.markdown(
+        """
+        <div class="hero" style="padding-top:1.6rem; padding-bottom:1.4rem;">
+            <div class="eyebrow">DETAILED WALKTHROUGH</div>
+            <h1 style="font-size:1.9rem;">Methodology를 처음 보는 사람도 따라가게 풀어쓴 버전</h1>
+            <p>
+                이 파트의 본질은 <strong>SQL을 정답 생성기</strong>가 아니라 <strong>증거 수집 도구</strong>로 재해석하는 데 있습니다.
+                아래 탭에서 큰 그림, SQL bundle, table analysis, metric, human verification, end-to-end 예시를 순서대로 볼 수 있습니다.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-/* ---- formula box ---- */
-.formula-box {
-    background: #232826;
-    border-left: 4px solid var(--accent-gold);
-    border-radius: 0;
-    padding: 16px 20px;
-    margin: 12px 0;
-    color: #efe5d6;
-    font-size: 0.9rem;
-    line-height: 1.75;
-}
-
-/* ---- example box ---- */
-.example-box {
-    background: rgba(252, 249, 242, 0.9);
-    border: 1px solid var(--line);
-    border-left: 4px solid var(--accent-gold);
-    border-radius: 0;
-    padding: 18px 20px;
-    margin: 14px 0;
-}
-.example-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--accent-gold);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    margin-bottom: 8px;
-}
-
-/* ---- contribution cards ---- */
-.contribution {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-left: 4px solid var(--accent-cool);
-    border-radius: 0;
-    padding: 18px 22px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow);
-}
-.contribution-tag {
-    display: inline-block;
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent-soft);
-    border-radius: 999px;
-    padding: 2px 10px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-    letter-spacing: 0.12em;
-}
-
-/* ---- score cards ---- */
-.score-card {
-    min-height: 168px;
-    padding: 20px 18px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-top: 4px solid;
-    box-shadow: var(--shadow);
-}
-.score-card-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-.score-card-value {
-    font-size: 1.15rem;
-    color: var(--ink);
-    margin: 12px 0 8px;
-}
-.score-card-body {
-    color: var(--muted);
-    font-size: 0.84rem;
-    line-height: 1.6;
-}
-.score-card.sql { border-top-color: var(--accent-cool); }
-.score-card.db { border-top-color: var(--accent-olive); }
-.score-card.insight { border-top-color: var(--accent-plum); }
-.score-vector {
-    text-align: center;
-    margin-top: 16px;
-    padding: 16px 18px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    color: var(--ink);
-    font-size: 1rem;
-}
-.score-vector-panel {
-    padding: 28px 32px;
-    background: #23211f;
-    border-top: 4px solid var(--accent-gold);
-    box-shadow: var(--shadow);
-    text-align: center;
-}
-.score-vector-panel-label {
-    color: #bba995;
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-}
-.score-vector-panel-main {
-    color: #f2e8da;
-    font-size: 1.35rem;
-    margin: 14px 0 16px;
-}
-.score-vector-panel-sub {
-    color: #d8c8b5;
-    font-size: 0.9rem;
-}
-.score-vector-panel-note {
-    color: #a59785;
-    font-size: 0.82rem;
-    margin-top: 12px;
-    line-height: 1.65;
-}
-
-/* ---- table styling ---- */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0;
-    font-size: 0.9rem;
-    background: rgba(252, 249, 242, 0.82);
-    border: 1px solid var(--line);
-}
-th {
-    background: #23211f;
-    color: #efe5d6;
-    padding: 11px 14px;
-    text-align: left;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-size: 0.76rem;
-}
-td {
-    padding: 10px 14px;
-    border-bottom: 1px solid rgba(214, 205, 191, 0.9);
-    color: #33403f;
-}
-tr:nth-child(even) td { background: rgba(31, 38, 37, 0.02); }
-tr:hover td { background: rgba(49, 90, 89, 0.08); }
-
-/* ---- divider ---- */
-.fancy-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(49, 90, 89, 0.45) 50%, transparent 100%);
-    margin: 34px 0;
-}
-
-/* ---- claim type badge ---- */
-.badge {
-    display: inline-block;
-    border-radius: 999px;
-    padding: 3px 10px;
-    font-size: 0.74rem;
-    font-weight: 700;
-    margin: 3px;
-    letter-spacing: 0.04em;
-}
-.badge-numeric { background: var(--accent-cool-soft); color: var(--accent-cool); }
-.badge-comparison { background: var(--accent-olive-soft); color: var(--accent-olive); }
-.badge-ranking { background: var(--accent-gold-soft); color: var(--accent-gold); }
-.badge-diagnostic { background: var(--accent-plum-soft); color: var(--accent-plum); }
-
-/* ---- score weight table ---- */
-.weight-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(214, 205, 191, 0.7);
-}
-.weight-label { min-width: 130px; font-weight: 500; color: #33403f; font-size: 0.9rem; }
-.weight-bar-bg { flex: 1; height: 10px; background: rgba(31, 38, 37, 0.08); border-radius: 999px; }
-.weight-bar-fill { height: 10px; border-radius: 999px; }
-.weight-pct { min-width: 40px; text-align: right; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
-
-/* ---- streamlit controls ---- */
-div[data-baseweb="tab-list"] {
-    gap: 6px;
-    margin-bottom: 18px;
-}
-button[data-baseweb="tab"] {
-    border: 1px solid var(--line);
-    border-radius: 0;
-    background: rgba(252, 249, 242, 0.75);
-    color: var(--ink);
-    padding: 10px 14px;
-}
-button[data-baseweb="tab"][aria-selected="true"] {
-    background: #23211f;
-    color: #efe5d6;
-    border-color: #23211f;
-}
-div[data-testid="stExpander"] {
-    border: 1px solid var(--line);
-    background: rgba(252, 249, 242, 0.78);
-}
-div[data-testid="stExpander"] details summary {
-    background: rgba(31, 38, 37, 0.03);
-}
-
-@media (max-width: 900px) {
-    .hero {
-        padding: 30px 24px 26px;
-    }
-    .hero-grid,
-    .hero-meta {
-        grid-template-columns: 1fr;
-    }
-    .hero-title {
-        font-size: 2.35rem;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ── Sidebar Navigation ────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown("### GROVER")
-    st.markdown("<small style='color:#cbbca7;'>Research Interface for End-to-End NL2SQL Reporting</small>", unsafe_allow_html=True)
-    st.markdown("---")
-    page = st.radio(
-        "페이지 선택",
+    tabs = st.tabs(
         [
-            "Overview",
+            "큰 그림",
+            "Part I · SQL Bundle",
+            "Part II · Table Analysis",
+            "Part III · Metric",
+            "Part IV · Human Verification",
+            "End-to-End Example",
+        ]
+    )
+
+    with tabs[0]:
+        callout(
+            "<strong>핵심 수식처럼 읽는 문장</strong><br>"
+            "GROVER는 문제를 <strong>q → Z → R → y</strong> 로 정의합니다."
+            " 즉 질문을 받아서 SQL 하나를 끝내는 것이 아니라, SQL 묶음을 만들고, 실제로 실행하고, 그 결과를 보고서로 바꾸는 전체 과정을 다룹니다."
+        )
+        st.latex(r"q \rightarrow Z \rightarrow R \rightarrow y")
+
+        notation_df = pd.DataFrame(
+            {
+                "기호": ["q", "D", "S", "Z", "R", "y", "C*", "Ĉ"],
+                "뜻": [
+                    "자연어 질문",
+                    "데이터베이스",
+                    "스키마",
+                    "SQL bundle",
+                    "SQL 실행 결과 집합",
+                    "최종 report",
+                    "gold claim set",
+                    "predicted claim set",
+                ],
+                "초심자용 해석": [
+                    "사용자가 묻는 문장",
+                    "실제 데이터가 들어 있는 공간",
+                    "테이블/컬럼 구조",
+                    "main SQL + support SQL 묶음",
+                    "각 SQL이 뽑아낸 표들",
+                    "최종적으로 사용자가 읽는 설명 문장",
+                    "정답 측에서 꼭 말해야 하는 claim 목록",
+                    "모델이 실제로 말한 claim 목록",
+                ],
+            }
+        )
+        st.dataframe(notation_df, hide_index=True, use_container_width=True)
+
+        st.markdown("### 이 수식이 왜 중요한가")
+        left, right = st.columns([1.05, 0.95])
+        with left:
+            card(
+                "기존 q → z₀ 관점의 한계",
+                "<p>질문에서 곧바로 SQL 한 개를 만드는 관점에서는 <strong>SQL 이후에 무슨 일이 벌어지는지</strong>가 잘 보이지 않습니다."
+                " 결과를 해석하는 과정, 근거를 보강하는 추가 query, 불확실성을 드러내는 caveat 등이 빠지기 쉽습니다.</p>",
+            )
+        with right:
+            card(
+                "q → Z → R → y 관점의 장점",
+                "<p>각 단계를 분리해서 보면 <strong>어디서 실패했는지</strong>를 더 잘 볼 수 있습니다."
+                " 예를 들어 SQL은 실행됐지만 report가 unsupported claim을 말한다면, 문제는 generation이 아니라 interpretation 단계에 있습니다.</p>",
+            )
+
+        st.markdown("### 6단계를 하나씩 뜯어보기")
+        selected_step = st.selectbox("보고 싶은 단계", list(PIPELINE_STEPS.keys()))
+        step = PIPELINE_STEPS[selected_step]
+
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            card(
+                f"{selected_step} · 무엇을 하나?",
+                f"<p><strong>목표</strong><br>{step['goal']}</p>"
+                f"<p><strong>입력</strong><br>{step['input']}</p>"
+                f"<p><strong>출력</strong><br>{step['output']}</p>",
+            )
+            mini_card("왜 필요한가", step["why"])
+            mini_card("초심자 비유", step["analogy"])
+        with c2:
+            card(
+                "예시로 보면",
+                f"<p>{step['example']}</p>",
+            )
+            danger_box(f"<strong>놓치기 쉬운 실패 모드</strong><br>{step['risk']}")
+
+        st.markdown("### 질문 유형이 왜 전체 구조를 바꾸는가")
+        t1, t2 = st.columns(2)
+        with t1:
+            card(
+                "Descriptive 질문",
+                "<p><strong>예:</strong> '2024년 4분기 총매출은 얼마인가?'</p>"
+                "<p><strong>필수 슬롯:</strong> direct answer, key value, relevant granularity</p>"
+                "<p><strong>핵심:</strong> 무엇이 얼마인지 정확히 보여주는 것이 우선입니다.</p>",
+            )
+        with t2:
+            card(
+                "Diagnostic 질문",
+                "<p><strong>예:</strong> '지난 분기 매출이 왜 감소했는가?'</p>"
+                "<p><strong>필수 슬롯:</strong> direct answer, trend, segment, driver, caveat</p>"
+                "<p><strong>핵심:</strong> 단순 수치가 아니라 설명 구조가 필요합니다.</p>",
+            )
+
+    with tabs[1]:
+        st.markdown("### 2.3 Part I: Evidence-Bundled NL2SQL")
+        callout(
+            "<strong>핵심 아이디어</strong><br>"
+            "GROVER는 SQL을 하나만 만들지 않습니다. 질문을 설명하는 데 필요한 <strong>증거 묶음(bundle)</strong>을 함께 만듭니다."
+        )
+
+        left, right = st.columns(2)
+        with left:
+            card(
+                "왜 single SQL로 부족한가",
+                "<p>질문이 '왜 감소했는가?'라면, 전체 감소율 하나만 알아서는 부족합니다.</p>"
+                "<ul>"
+                "<li>시간에 따라 계속 줄었는가? (trend)</li>"
+                "<li>어느 지역/세그먼트가 크게 줄었는가? (breakdown)</li>"
+                "<li>가장 큰 감소 driver는 무엇인가? (driver)</li>"
+                "</ul>",
+            )
+        with right:
+            card(
+                "bundle이 주는 이점",
+                "<p>support SQL을 미리 확보하면, 보고서는 단순 요약이 아니라 <strong>근거가 연결된 설명</strong>이 됩니다.</p>"
+                "<p>즉 SQL bundle은 '쿼리 여러 개'가 아니라 <strong>최종 해석을 위한 evidence plan</strong>입니다.</p>",
+            )
+
+        example_mode = st.radio(
+            "질문 유형별 bundle 구조",
+            ["Descriptive 예시", "Diagnostic 예시"],
+            horizontal=True,
+        )
+
+        if example_mode == "Descriptive 예시":
+            c1, c2 = st.columns([0.95, 1.05])
+            with c1:
+                mini_card("Main SQL", "직접 답을 주는 query. 예: 특정 분기의 총매출 계산")
+                mini_card("Support SQL", "필수는 아니지만 granularity 확인이나 top-k evidence query를 붙일 수 있습니다.")
+                st.code(
+                    """
+-- Main SQL (illustrative)
+SELECT SUM(revenue) AS total_revenue
+FROM sales
+WHERE quarter = '2024-Q4';
+
+-- Optional support SQL
+SELECT product_name, SUM(revenue) AS product_revenue
+FROM sales
+WHERE quarter = '2024-Q4'
+GROUP BY product_name
+ORDER BY product_revenue DESC
+LIMIT 5;
+                    """.strip(),
+                    language="sql",
+                )
+            with c2:
+                card(
+                    "이 구조가 충분한 이유",
+                    "<p>Descriptive 질문은 '얼마인가'를 정확히 답하는 것이 핵심입니다. 따라서 main SQL이 질문을 직접 풀면 되고, support SQL은 answer를 더 읽기 쉽게 보조하는 역할입니다.</p>",
+                )
+                success_box(
+                    "<strong>요점</strong><br>Descriptive에서는 support SQL이 선택적이지만, Diagnostic에서는 support SQL이 사실상 핵심 구성요소가 됩니다."
+                )
+        else:
+            c1, c2 = st.columns([0.95, 1.05])
+            with c1:
+                mini_card("Main SQL", "전분기 대비 KPI 차이나 핵심 타깃 지표를 바로 계산")
+                mini_card("Support SQL 1", "시간 추세를 보는 trend query")
+                mini_card("Support SQL 2", "지역·제품·세그먼트별 breakdown query")
+                mini_card("Support SQL 3", "상위 감소 요인을 찾는 driver query")
+                st.code(
+                    """
+-- Main SQL: overall KPI delta
+SELECT quarter, SUM(revenue) AS total_revenue
+FROM sales
+WHERE quarter IN ('2024-Q1', '2024-Q2')
+GROUP BY quarter;
+
+-- Support SQL 1: trend
+SELECT month, SUM(revenue) AS monthly_revenue
+FROM sales
+WHERE month BETWEEN '2024-01' AND '2024-06'
+GROUP BY month;
+
+-- Support SQL 2: segment breakdown
+SELECT region, customer_segment, SUM(revenue) AS segment_revenue
+FROM sales
+WHERE quarter IN ('2024-Q1', '2024-Q2')
+GROUP BY region, customer_segment;
+
+-- Support SQL 3: top driver
+SELECT region, customer_segment, product_family,
+       SUM(revenue_q2 - revenue_q1) AS delta
+FROM segment_delta_view
+GROUP BY region, customer_segment, product_family
+ORDER BY delta ASC
+LIMIT 5;
+                    """.strip(),
+                    language="sql",
+                )
+            with c2:
+                card(
+                    "왜 이 질문에는 bundle이 사실상 필수인가",
+                    "<p>사용자가 '왜'를 묻는 순간, 시스템은 explanation burden을 집니다. 이 burden을 single SQL 하나에 억지로 담으려 하면 답이 얕아지거나 unsupported causal claim이 생기기 쉽습니다.</p>"
+                    "<p>반대로 bundle은 explanation을 단계별로 분해합니다. 전체 변화, 추세, 세그먼트, driver가 따로 확보되므로 report도 더 안정적입니다.</p>",
+                )
+                danger_box(
+                    "<strong>주의</strong><br>support SQL은 많을수록 무조건 좋은 것이 아닙니다. 질문 의도와 직접 관련 있는 evidence만 모으는 것이 중요합니다."
+                )
+
+        st.markdown("### Candidate generation과 selection은 어떻게 달라지나")
+        c3, c4 = st.columns([0.95, 1.05])
+        with c3:
+            card(
+                "candidate 다양성 확보",
+                "<ul>"
+                "<li><strong>prompt variation</strong>: 다른 지시문으로 후보 생성</li>"
+                "<li><strong>decomposition variation</strong>: 질문을 분해하는 방식 변경</li>"
+                "<li><strong>retrieval variation</strong>: 다른 schema/value subset 사용</li>"
+                "</ul>"
+                "<p>핵심은 한 질문에 대해 서로 다른 evidence plan을 가진 bundle 후보를 얻는 것입니다.</p>",
+            )
+        with c4:
+            st.dataframe(TABLES["candidate_table"], hide_index=True, use_container_width=True)
+            st.caption("예시 숫자는 설명용입니다. 여기서 GROVER는 SQL-Level만이 아니라 예상 report 품질까지 함께 보고 후보를 고릅니다.")
+
+        success_box(
+            "<strong>Part I 한 줄 요약</strong><br>"
+            "GROVER의 SQL 단계는 '정답 SQL 맞히기'가 아니라 '최종 설명에 필요한 근거를 체계적으로 확보하기'로 목적이 바뀝니다."
+        )
+
+    with tabs[2]:
+        st.markdown("### 2.4 Part II: SQL 이후의 Table Data Analysis")
+        callout(
+            "<strong>중요한 전환</strong><br>"
+            "SQL 실행 뒤의 단계는 단순 post-processing이 아닙니다. 실제 사용자는 테이블 자체보다 <strong>테이블의 의미가 풀어진 설명</strong>을 원합니다."
+        )
+
+        st.markdown("### 예시 결과 테이블")
+        result_tabs = st.tabs(["Trend", "Breakdown", "Driver"])
+        with result_tabs[0]:
+            st.dataframe(TABLES["trend"], hide_index=True, use_container_width=True)
+            st.line_chart(TABLES["trend"].set_index("월"))
+        with result_tabs[1]:
+            st.dataframe(TABLES["breakdown"], hide_index=True, use_container_width=True)
+        with result_tabs[2]:
+            st.dataframe(TABLES["driver"], hide_index=True, use_container_width=True)
+
+        st.markdown("### 왜 결과 테이블을 바로 보여주면 부족한가")
+        c1, c2 = st.columns(2)
+        with c1:
+            card(
+                "테이블만 보여줄 때의 문제",
+                "<ul>"
+                "<li>사용자가 어떤 숫자가 중요한지 스스로 해석해야 합니다.</li>"
+                "<li>숫자와 의미의 연결이 약하면 decision-making에 바로 쓰기 어렵습니다.</li>"
+                "<li>모델이 어떤 evidence를 근거로 어떤 문장을 말했는지 추적이 어렵습니다.</li>"
+                "</ul>",
+            )
+        with c2:
+            card(
+                "Structured report가 주는 장점",
+                "<ul>"
+                "<li>답을 direct answer / supporting claims / caveat로 분리합니다.</li>"
+                "<li>각 claim을 어떤 result table이 뒷받침하는지 연결하기 쉬워집니다.</li>"
+                "<li>나중에 metric으로 평가할 때 claim 단위 검증이 가능합니다.</li>"
+                "</ul>",
+            )
+
+        report_box(
+            direct_answer="지난 분기 매출 감소의 주된 원인은 북미 지역 Enterprise 세그먼트 부진입니다.",
+            claims=[
+                "북미 Enterprise 매출은 전분기 대비 37.5% 감소했습니다.",
+                "6개월 추세를 보면 4월 이후 월별 매출이 지속적으로 하락했습니다.",
+                "북미 Enterprise 감소분이 전체 감소액의 가장 큰 비중을 차지했습니다.",
+            ],
+            caveat="프로모션 종료나 가격 정책 변화 같은 외부 요인은 현재 결과 테이블만으로 직접 검증되지 않습니다.",
+        )
+
+        st.markdown("### claim 단위 검증은 어떻게 하나")
+        st.dataframe(TABLES["claims"], hide_index=True, use_container_width=True)
+
+        claim_focus = st.radio(
+            "claim 유형별로 직관 보기",
+            ["numeric", "comparison", "ranking", "diagnostic"],
+            horizontal=True,
+        )
+        if claim_focus == "numeric":
+            success_box(
+                "<strong>Numeric claim</strong><br>"
+                "예: '북미 Enterprise 매출은 37.5% 감소했다.'<br>"
+                "→ 표의 두 값을 꺼내 직접 계산하면 됩니다. 가장 deterministic하게 검증 가능한 claim입니다."
+            )
+        elif claim_focus == "comparison":
+            success_box(
+                "<strong>Comparison claim</strong><br>"
+                "예: '북미 감소폭이 유럽보다 더 크다.'<br>"
+                "→ 두 그룹의 delta를 비교하면 됩니다. 값 자체보다 관계를 검증합니다."
+            )
+        elif claim_focus == "ranking":
+            success_box(
+                "<strong>Ranking claim</strong><br>"
+                "예: '가장 큰 감소 요인은 북미 Enterprise이다.'<br>"
+                "→ 정렬 결과에서 top-1이 맞는지 확인합니다."
+            )
+        else:
+            success_box(
+                "<strong>Diagnostic claim</strong><br>"
+                "예: '주된 원인은 북미 Enterprise 부진이다.'<br>"
+                "→ 숫자 evidence는 존재하지만, '원인'이라는 해석이 섞여 있습니다. 따라서 테이블 근거 + LLM judge + human audit를 함께 쓰는 hybrid 검증이 필요합니다."
+            )
+
+        danger_box(
+            "<strong>좋아 보이지만 위험한 문장 예시</strong><br>"
+            "'매출 감소는 가격 정책 실패 때문입니다.'<br>"
+            "현재 결과 테이블에 가격 정책 관련 컬럼이나 실험 근거가 없다면, 이 문장은 그럴듯해 보여도 table-grounded하지 않습니다. GROVER는 이런 unsupported claim을 낮게 평가하려고 합니다."
+        )
+
+        success_box(
+            "<strong>Part II 한 줄 요약</strong><br>"
+            "GROVER에서 report generation은 단순 요약이 아니라, <strong>검증 가능한 claim 구조를 만드는 단계</strong>입니다."
+        )
+
+    with tabs[3]:
+        st.markdown("### 2.5 Part III: GROVER Metric")
+        callout(
+            "<strong>설계 철학</strong><br>"
+            "1) SQL correctness만 보지 않는다. 2) judge-only metric에만 의존하지 않는다. 3) table-grounded verification을 우선한다. 4) 질문 유형에 따라 필요한 insight를 다르게 본다. 5) 결국 사람 판단과의 정렬을 확인한다."
+        )
+
+        level_tabs = st.tabs(["Level 1 · SQL", "Level 2 · DB", "Level 3 · Insight"])
+        with level_tabs[0]:
+            st.markdown("#### SQL-Level")
+            st.latex(r"S_{\text{sql}} = \alpha_1 \cdot EX + \alpha_2 \cdot TS + \alpha_3 \cdot SF1")
+            card(
+                "초심자용 해석",
+                "<p>이 score는 <strong>쿼리 자체가 얼마나 맞는가</strong>를 말합니다. Execution Accuracy는 실제 실행 결과가 맞는지, Test Suite는 semantic equivalence를 더 넓게 보는지, Soft F1은 결과 유사도를 부드럽게 재는지에 가깝습니다.</p>"
+                "<p>여기서 EM은 보조 지표로 남기고 main score에서는 비중을 낮게 둡니다. 이유는 표면 형태가 달라도 의미상 같은 SQL이 많기 때문입니다.</p>",
+            )
+
+        with level_tabs[1]:
+            st.markdown("#### DB-Level")
+            st.latex(r"S_{\text{db}} = \beta_1 \cdot \widetilde{RVES} + \beta_2 \cdot (1-\widetilde{Retry}) + \beta_3 \cdot (1-\widetilde{Calls})")
+            card(
+                "초심자용 해석",
+                "<p>이 score는 <strong>시스템이 얼마나 효율적으로 움직이는가</strong>를 봅니다. 같은 품질의 report를 만든다면, 더 적은 DB 호출과 더 적은 retry로 끝내는 시스템이 실무적입니다.</p>"
+                "<p>즉 DB-Level은 단순 성능이 아니라, agentic workflow의 비용 구조를 보는 층입니다.</p>",
+            )
+
+        with level_tabs[2]:
+            st.markdown("#### Insight-Level")
+            st.markdown("##### (1) Table-Grounded Precision / Recall / F1")
+            st.latex(r"TG\text{-}P = \frac{\sum_{c \in \hat{C}} \mathbb{1}[c \vdash R]}{|\hat{C}|}")
+            st.latex(r"TG\text{-}R = \frac{\sum_{c^* \in C^*} \mathbb{1}[c^*\ \text{is covered by}\ y]}{|C^*|}")
+            st.latex(r"TG\text{-}F1 = \frac{2 \cdot TG\text{-}P \cdot TG\text{-}R}{TG\text{-}P + TG\text{-}R}")
+            mini_card("직관", "모델이 말한 claim 중 실제 표로 지지되는 비율(TG-P)과, 꼭 말했어야 하는 claim을 얼마나 빠짐없이 말했는지(TG-R)를 함께 봅니다.")
+
+            st.markdown("##### (2) Numeric Consistency")
+            st.latex(r"NumAcc = \frac{\#\ correct\ numerical\ claims}{\#\ all\ numerical\ claims}")
+            mini_card("직관", "숫자 하나만 틀려도 보고서 신뢰성이 크게 떨어집니다. 그래서 numeric claim은 따로 강하게 봅니다.")
+
+            st.markdown("##### (3) Question Coverage")
+            st.latex(r"Cov = \frac{\#\ required\ slots\ addressed}{\#\ required\ slots}")
+            mini_card("직관", "질문에 꼭 필요한 요소를 빠뜨리면 자연스러워 보여도 좋은 답이 아닙니다. diagnostic 질문인데 trend나 driver가 없으면 coverage가 낮아집니다.")
+
+            st.markdown("##### (4) Intent Alignment")
+            st.latex(r"IA \in [0,1]")
+            mini_card("직관", "질문이 descriptive인데 과한 추천을 늘어놓거나, diagnostic인데 숫자만 던지는 식의 mismatch를 잡아냅니다.")
+
+            st.markdown("##### (5) 종합 score")
+            st.latex(r"S_{\text{insight}} = \gamma_1 \cdot TG\text{-}F1 + \gamma_2 \cdot NumAcc + \gamma_3 \cdot Cov + \gamma_4 \cdot IA")
+            mini_card("문서의 기본 가중치", "γ₁=0.35, γ₂=0.30, γ₃=0.20, γ₄=0.15. 즉 groundedness와 numeric correctness를 가장 중요하게 둡니다.")
+
+        st.markdown("### 직접 만져보는 Insight Score 샌드박스")
+        preset = st.selectbox(
+            "예시 시나리오",
+            [
+                "균형 잡힌 좋은 report",
+                "숫자 실수가 있는 report",
+                "핵심 슬롯을 빠뜨린 report",
+                "의도와 안 맞는 report",
+            ],
+        )
+
+        defaults = {
+            "균형 잡힌 좋은 report": (0.84, 0.90, 0.85, 0.82),
+            "숫자 실수가 있는 report": (0.78, 0.42, 0.80, 0.77),
+            "핵심 슬롯을 빠뜨린 report": (0.76, 0.88, 0.45, 0.80),
+            "의도와 안 맞는 report": (0.72, 0.85, 0.70, 0.35),
+        }
+        d_tg, d_num, d_cov, d_ia = defaults[preset]
+
+        s1, s2, s3, s4 = st.columns(4)
+        with s1:
+            tg_f1 = st.slider("TG-F1", 0.0, 1.0, float(d_tg), 0.01)
+        with s2:
+            num_acc = st.slider("NumAcc", 0.0, 1.0, float(d_num), 0.01)
+        with s3:
+            cov = st.slider("Coverage", 0.0, 1.0, float(d_cov), 0.01)
+        with s4:
+            ia = st.slider("Intent Alignment", 0.0, 1.0, float(d_ia), 0.01)
+
+        with st.expander("가중치 조정하기"):
+            w1 = st.slider("γ₁ · TG-F1 비중", 0, 100, 35, 1)
+            w2 = st.slider("γ₂ · NumAcc 비중", 0, 100, 30, 1)
+            w3 = st.slider("γ₃ · Coverage 비중", 0, 100, 20, 1)
+            w4 = st.slider("γ₄ · IA 비중", 0, 100, 15, 1)
+            weights = normalize_weights([w1, w2, w3, w4])
+        if "weights" not in locals():
+            weights = (0.35, 0.30, 0.20, 0.15)
+
+        insight_score = compute_insight_score(tg_f1, num_acc, cov, ia, weights)
+        sql_score = st.slider("예시 SQL-Level score", 0.0, 1.0, 0.88, 0.01)
+        db_score = st.slider("예시 DB-Level score", 0.0, 1.0, 0.74, 0.01)
+
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            st.metric("S_sql", f"{sql_score:.2f}")
+        with m2:
+            st.metric("S_db", f"{db_score:.2f}")
+        with m3:
+            st.metric("S_insight", f"{insight_score:.2f}")
+
+        score_df = pd.DataFrame(
+            {
+                "component": ["SQL-Level", "DB-Level", "Insight-Level"],
+                "score": [sql_score, db_score, insight_score],
+            }
+        ).set_index("component")
+        st.bar_chart(score_df)
+
+        weakest = min(
+            {
+                "TG-F1": tg_f1,
+                "NumAcc": num_acc,
+                "Coverage": cov,
+                "Intent Alignment": ia,
+            }.items(),
+            key=lambda x: x[1],
+        )[0]
+        callout(
+            f"<strong>현재 샌드박스 해석</strong><br>"
+            f"가장 약한 요소는 <strong>{weakest}</strong>입니다. GROVER의 장점은 최종 점수만 보는 것이 아니라, 어느 축이 약한지까지 분해해서 보여준다는 점입니다."
+        )
+
+        success_box(
+            "<strong>Part III 한 줄 요약</strong><br>"
+            "GROVER metric은 '그럴듯함'을 재는 것이 아니라, <strong>표에 근거한 claim인가 · 숫자가 맞는가 · 중요한 요소를 빠뜨리지 않았는가 · 질문 의도에 맞는가</strong>를 따로 나눠서 봅니다."
+        )
+
+    with tabs[4]:
+        st.markdown("### 2.6 Part IV: Human-verified Evaluation Protocol")
+        callout(
+            "<strong>왜 사람 검증이 필요한가</strong><br>"
+            "benchmark에 annotation noise와 ambiguous question이 존재할 수 있기 때문에, 자동 metric만으로 논문을 밀어붙이면 설득력이 약해질 수 있습니다."
+        )
+
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            step_box(1, "샘플링", "BIRD/CORGI에서 150~200개 정도를 골라 human-verified subset을 만듭니다.")
+        with c2:
+            step_box(2, "이중 annotation", "2인이 독립적으로 question type, gold support evidence, gold claim set 등을 라벨링합니다.")
+        with c3:
+            step_box(3, "조정(adjudication)", "불일치 사례를 합의해 최종 gold를 만듭니다.")
+        with c4:
+            step_box(4, "상관 분석", "GROVER-Insight가 사람의 factual correctness/usefulness/completeness와 얼마나 맞는지 봅니다.")
+
+        annotation_df = pd.DataFrame(
+            {
+                "annotation 항목": [
+                    "question type",
+                    "acceptable SQL family",
+                    "gold support evidence",
+                    "gold atomic claim set",
+                    "required analytical slots",
+                    "ambiguity / abstention label",
+                ],
+                "왜 필요한가": [
+                    "descriptive와 diagnostic의 요구가 다르기 때문",
+                    "정답 SQL이 하나만이 아닐 수 있기 때문",
+                    "어떤 evidence가 정말 필요한지 분명히 하기 위해",
+                    "report를 claim 단위로 검증하기 위해",
+                    "coverage를 공정하게 재기 위해",
+                    "애매한 질문을 억지로 단정하지 않기 위해",
+                ],
+            }
+        )
+        st.dataframe(annotation_df, hide_index=True, use_container_width=True)
+
+        left, right = st.columns(2)
+        with left:
+            card(
+                "사람 평가 축",
+                "<ul>"
+                "<li><strong>factual correctness</strong>: 사실과 수치가 맞는가</li>"
+                "<li><strong>usefulness</strong>: 실제 의사결정에 쓸 만한가</li>"
+                "<li><strong>completeness</strong>: 핵심 요소를 빠뜨리지 않았는가</li>"
+                "</ul>",
+            )
+        with right:
+            card(
+                "이 파트가 논문에 주는 힘",
+                "<p>GROVER가 generic judge나 vanilla metric보다 사람 판단과 더 잘 맞는다는 것을 보이면, '왜 table-specific redesign이 필요한가'를 강하게 설득할 수 있습니다.</p>",
+            )
+
+        danger_box(
+            "<strong>이 파트가 없으면 생길 수 있는 문제</strong><br>"
+            "자동 metric이 높은 점수를 준 답변이 실제로는 사람에게 쓸모없을 수도 있습니다. 사람 정렬 검증은 이 위험을 줄여 줍니다."
+        )
+
+        success_box(
+            "<strong>Part IV 한 줄 요약</strong><br>"
+            "GROVER-Bridge는 자동 metric의 '현실 감각'을 점검하는 안전장치입니다."
+        )
+
+    with tabs[5]:
+        st.markdown("### Diagnostic 질문 하나를 끝까지 따라가 보기")
+        callout(
+            "<strong>예시 질문</strong><br>지난 분기 매출이 왜 감소했는가?"
+        )
+
+        walkthrough = st.tabs(
+            [
+                "1) Typing",
+                "2) Retrieval",
+                "3) SQL Bundle",
+                "4) Execution Results",
+                "5) Structured Report",
+                "6) Evaluation",
+            ]
+        )
+
+        with walkthrough[0]:
+            card(
+                "질문 유형 분류",
+                "<p>이 질문은 단순히 숫자를 묻는 것이 아니라 <strong>'이유'</strong>를 묻습니다. 따라서 type은 <strong>diagnostic</strong>입니다.</p>"
+                "<p>이 한 번의 분류가 뒤 단계 전부를 바꿉니다. 이후 시스템은 direct answer만이 아니라 trend, segment, driver, caveat를 준비해야 합니다.</p>",
+            )
+
+        with walkthrough[1]:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### 회수한 schema")
+                st.code(
+                    """
+Tables:
+- sales
+- customers
+- regions
+- product_catalog
+
+Relevant columns:
+- order_date
+- quarter
+- revenue
+- region
+- customer_segment
+- product_family
+                    """.strip(),
+                    language="text",
+                )
+            with c2:
+                card(
+                    "왜 이렇게 좁히는가",
+                    "<p>문제와 직접 상관없는 컬럼까지 전부 넣으면 모델이 산만해집니다. retrieval은 단순 속도 개선이 아니라 <strong>정확도 개선</strong>에도 중요합니다.</p>",
+                )
+
+        with walkthrough[2]:
+            st.code(
+                """
+Main SQL      : 분기별 총매출 차이 계산
+Support SQL 1 : 최근 6개월 월별 추세 계산
+Support SQL 2 : 지역 × 세그먼트별 감소폭 계산
+Support SQL 3 : 감소액 기준 top driver 정렬
+                """.strip(),
+                language="text",
+            )
+            card(
+                "여기서의 포인트",
+                "<p>이 bundle은 각각 다른 질문에 답합니다.</p>"
+                "<ul>"
+                "<li>Main SQL → 정말 감소했는가?</li>"
+                "<li>Trend → 일시적 하락인가 지속 하락인가?</li>"
+                "<li>Breakdown → 어느 그룹에서 크게 줄었는가?</li>"
+                "<li>Driver → 가장 설명력이 큰 요인은 무엇인가?</li>"
+                "</ul>",
+            )
+
+        with walkthrough[3]:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("#### Trend 결과")
+                st.dataframe(TABLES["trend"], hide_index=True, use_container_width=True)
+            with c2:
+                st.markdown("#### Breakdown 결과")
+                st.dataframe(TABLES["breakdown"], hide_index=True, use_container_width=True)
+            st.markdown("#### Driver 결과")
+            st.dataframe(TABLES["driver"], hide_index=True, use_container_width=True)
+
+        with walkthrough[4]:
+            report_box(
+                direct_answer="지난 분기 매출 감소는 북미 Enterprise 세그먼트 부진이 가장 큰 원인으로 보입니다.",
+                claims=[
+                    "북미 Enterprise 매출은 전분기 대비 37.5% 감소했습니다.",
+                    "전체 월별 매출은 4월 이후 지속적으로 하락했습니다.",
+                    "북미 Enterprise 감소액이 다른 지역·세그먼트보다 가장 큽니다.",
+                ],
+                caveat="가격 정책 변화나 외부 시장 충격은 현재 결과 테이블만으로 직접 검증되지 않으므로, '원인' 해석은 이 범위 안에서만 유효합니다.",
+            )
+            success_box(
+                "<strong>좋은 report의 특징</strong><br>"
+                "답을 하나의 문장으로 끝내지 않고, 숫자 evidence와 caveat를 함께 제시합니다. 그래서 사용자는 '무슨 말인지'와 '왜 그렇게 말했는지'를 동시에 볼 수 있습니다."
+            )
+
+        with walkthrough[5]:
+            eval_df = pd.DataFrame(
+                {
+                    "평가 항목": ["TG-F1", "NumAcc", "Coverage", "IA", "S_insight"],
+                    "예시 값": [0.86, 0.92, 0.80, 0.84, 0.86 * 0.35 + 0.92 * 0.30 + 0.80 * 0.20 + 0.84 * 0.15],
+                    "해석": [
+                        "대부분의 claim이 table-grounded됨",
+                        "수치 claim이 거의 정확함",
+                        "diagnostic에 필요한 슬롯 대부분을 충족",
+                        "질문 의도와 잘 맞음",
+                        "최종 Insight-Level 종합 점수",
+                    ],
+                }
+            )
+            st.dataframe(eval_df, hide_index=True, use_container_width=True)
+            danger_box(
+                "<strong>single SQL baseline과의 차이</strong><br>"
+                "single SQL baseline은 '매출이 12% 감소했다' 정도는 맞힐 수 있어도, trend·breakdown·driver를 분리해서 보여주지 못할 가능성이 큽니다. 그 결과 Coverage와 IA가 떨어질 수 있습니다."
+            )
+
+        success_box(
+            "<strong>Methodology 전체 요약</strong><br>"
+            "GROVER는 SQL을 더 화려하게 만드는 프레임워크가 아니라, <strong>좋은 분석 보고서를 만들기 위해 필요한 근거를 모으고, 그 근거 위에서만 말하게 만드는 프레임워크</strong>입니다."
+        )
+
+
+
+def render_experimental() -> None:
+    st.markdown("## 3. Experimental")
+    callout(
+        "<strong>실험의 목적</strong><br>"
+        "이 파트는 'GROVER가 정말 가치가 있는가?'를 보이기 위한 설계입니다. 핵심은 SQL-level 점수가 비슷해도 insight-level ranking이 달라질 수 있다는 점을 실험으로 보여주는 것입니다."
+    )
+
+    tabs = st.tabs(["연구 질문", "데이터셋 전략", "모델/환경", "Baseline & Ablation"])
+
+    with tabs[0]:
+        r1, r2, r3 = st.columns(3)
+        with r1:
+            card(
+                "RQ1",
+                "<p><strong>Evidence-bundled pipeline</strong>은 single-SQL baseline보다 Insight-Level quality를 높이는가?</p>"
+                "<p><strong>가설:</strong> SQL accuracy가 비슷해도 support SQL과 report-aware selection이 insight를 개선할 것입니다.</p>",
+            )
+        with r2:
+            card(
+                "RQ2",
+                "<p><strong>GROVER-Insight</strong>는 generic judge나 vanilla metric보다 사람 판단과 더 잘 정렬되는가?</p>"
+                "<p><strong>가설:</strong> claim decomposition + numeric verification이 더 높은 human correlation을 보일 것입니다.</p>",
+            )
+        with r3:
+            card(
+                "RQ3",
+                "<p><strong>SQL-Level ranking</strong>과 <strong>end-to-end report ranking</strong>은 일치하는가?</p>"
+                "<p><strong>가설:</strong> 같은 SQL-Level score여도 Insight-Level은 크게 달라질 수 있습니다.</p>",
+            )
+
+    with tabs[1]:
+        st.dataframe(TABLES["datasets"], hide_index=True, use_container_width=True)
+        left, right = st.columns(2)
+        with left:
+            card(
+                "왜 benchmark를 섞어 쓰는가",
+                "<p>문서의 제안은 단일 benchmark로 모든 걸 보려 하지 않습니다. SQL correctness, business-domain insight, human alignment는 서로 다른 역할을 가지므로 benchmark를 분업적으로 씁니다.</p>",
+            )
+        with right:
+            card(
+                "실전 우선순위",
+                "<p>학기 프로젝트나 빠른 프로토타입이라면 <strong>BIRD Mini-Dev V2 → CORGI subset → GROVER-Bridge</strong> 순으로 가는 것이 현실적입니다.</p>",
+            )
+
+    with tabs[2]:
+        m1, m2, m3 = st.columns(3)
+        with m1:
+            card(
+                "SQL generation용",
+                "<p>문서에서는 Qwen2.5-Coder-7B-Instruct, Qwen2.5-7B-Instruct 같은 4B~8B급 open-weight 모델을 현실적인 선택지로 둡니다.</p>",
+            )
+        with m2:
+            card(
+                "Reporter / Judge용",
+                "<p>Gemma 3 4B IT, Phi-4-mini-instruct처럼 결과 테이블과 긴 context를 읽을 수 있는 소형 모델을 report/judge 역할에 배치합니다.</p>",
+            )
+        with m3:
+            card(
+                "환경 세팅",
+                "<p>Colab, 4-bit quantization, LoRA/QLoRA, SQLite 우선, candidate 수 3~5개, diagnostic support SQL 최대 3개 정도가 시작점으로 제안됩니다.</p>",
+            )
+        success_box(
+            "<strong>실무적인 장점</strong><br>"
+            "문서는 지나치게 큰 모델 대신 Colab에서 돌아갈 수 있는 실험 구성을 제안합니다. 즉 아이디어의 가치는 규모보다 framing과 metric 설계에 놓여 있습니다."
+        )
+
+    with tabs[3]:
+        st.dataframe(TABLES["baselines"], hide_index=True, use_container_width=True)
+        st.markdown("### 추천 ablation")
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            mini_card("support SQL 제거", "bundle 자체가 diagnostic question에서 얼마나 중요한지 검증합니다.")
+            mini_card("report-aware selector 제거", "후보 선택 objective의 차이를 검증합니다.")
+        with a2:
+            mini_card("numeric checker 제거", "숫자 검증 모듈이 얼마나 신뢰성에 기여하는지 봅니다.")
+            mini_card("Coverage metric 제거", "핵심 slot 개념이 왜 필요한지 확인합니다.")
+        with a3:
+            mini_card("diagnostic → descriptive 축소", "문제 난도가 어떻게 달라지는지 비교합니다.")
+            mini_card("human subset 제거", "사람 정렬 검증 없이도 주장이 유지되는지 점검합니다.")
+
+        danger_box(
+            "<strong>중요한 해석 포인트</strong><br>"
+            "논문의 승부처는 SQL score를 조금 더 올리는 데 있지 않습니다. 'SQL 점수는 비슷한데 왜 최종 분석 품질은 달라지는가'를 보여주는 것이 핵심 메시지입니다."
+        )
+
+
+
+def render_conclusion() -> None:
+    st.markdown("## 4. Conclusion")
+    st.markdown(
+        """
+        <div class="hero" style="padding-top:1.5rem; padding-bottom:1.35rem;">
+            <div class="eyebrow">TAKEAWAYS</div>
+            <h1 style="font-size:1.9rem;">이 문서에서 꼭 기억할 다섯 가지</h1>
+            <p>연구의 중심은 새로운 SQL generator 경쟁이 아니라, NL2SQL 기반 데이터 분석 시스템을 <strong>어떻게 공정하고 유의미하게 평가할 것인가</strong>에 있습니다.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        mini_card("1. 문제 재정의", "NL2SQL은 더 이상 q → SQL 하나의 문제가 아니라, q → SQL bundle → execution result → report의 end-to-end 문제입니다.")
+        mini_card("2. SQL bundle의 필요성", "특히 diagnostic 질문은 trend / breakdown / driver evidence가 필요하므로 support SQL이 중요합니다.")
+        mini_card("3. report는 별도 연구 대상", "좋은 시스템은 결과 테이블을 던지는 것이 아니라, 검증 가능한 structured report를 생성해야 합니다.")
+    with c2:
+        mini_card("4. Insight-Level이 핵심 novelty", "TG-F1, NumAcc, Coverage, Intent Alignment를 함께 보아야 최종 분석 품질을 재볼 수 있습니다.")
+        mini_card("5. 사람 정렬 검증이 중요", "GROVER-Bridge 같은 human-verified subset이 있어야 metric의 설득력이 커집니다.")
+
+    st.markdown("### 자주 생길 오해 정리")
+    faq1, faq2 = st.columns(2)
+    with faq1:
+        card(
+            "이 연구는 새 SQL model 논문인가?",
+            "<p>아니요. 문서의 framing상 중심 기여는 <strong>evaluation framework와 metric</strong>입니다. SQL bundle 시스템은 이 아이디어를 검증하기 위한 시스템 기여에 가깝습니다.</p>",
+        )
+    with faq2:
+        card(
+            "왜 scalar score 하나로 끝내지 않는가?",
+            "<p>SQL, DB efficiency, Insight quality는 서로 다른 실패 양상을 가집니다. 그래서 기본 출력은 <strong>score vector</strong>로 두는 편이 분석적으로 더 유용합니다.</p>",
+        )
+
+    success_box(
+        "<strong>최종 한 문장</strong><br>"
+        "GROVER는 '맞는 쿼리'보다 한 단계 더 나아가, <strong>근거 있는 분석 보고서</strong>를 만드는 NL2SQL 시스템을 평가하려는 프레임워크입니다."
+    )
+
+
+
+def render_appendix() -> None:
+    st.markdown("## Appendix")
+    st.markdown("### 용어집")
+    st.dataframe(TABLES["glossary"], hide_index=True, use_container_width=True)
+
+    st.markdown("### 처음 구현할 때의 우선순위")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        step_box(1, "작게 시작", "Descriptive와 diagnostic을 먼저 분리하고, diagnostic subset에 집중합니다.")
+    with c2:
+        step_box(2, "구조부터 만들기", "자유 생성보다 structured report 포맷을 먼저 고정합니다.")
+    with c3:
+        step_box(3, "평가 먼저 설계", "나중에 보겠다고 미루지 말고 TG-F1, NumAcc, Coverage 구조를 초기에 잡습니다.")
+
+    st.markdown("### 원문 보기")
+    if RAW_DOCUMENT:
+        with st.expander("업로드된 원문 markdown 열기"):
+            st.code(RAW_DOCUMENT, language="markdown")
+    else:
+        st.info("앱과 같은 폴더에서 원문 파일을 찾지 못했습니다. 그래도 이 앱은 자체 설명만으로 동작합니다.")
+
+    st.markdown(
+        '<p class="footer-note">이 앱은 업로드된 프로젝트 문서를 바탕으로, 초심자 친화적 설명과 시각적 구조를 추가한 해설 버전입니다. 예시 SQL과 표는 이해를 돕기 위한 illustrative example이며, 실제 실험 결과를 주장하지 않습니다.</p>',
+        unsafe_allow_html=True,
+    )
+
+
+# -----------------------------
+# Main app
+# -----------------------------
+
+
+def main() -> None:
+    inject_css()
+
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-kicker">GROVER Explainer</div>
+            <h2>From SQL to Reporting</h2>
+            <p>문서 내용을 설명용 인터랙티브 페이지로 다시 엮었습니다. 핵심은 Methodology와 Insight-Level metric입니다.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    section = st.sidebar.radio(
+        "Sections",
+        [
+            "개요",
             "Introduction",
             "Methodology",
             "Experimental",
-            "References",
+            "Conclusion",
         ],
-        label_visibility="collapsed",
     )
-    st.markdown("---")
-    st.markdown("""
-    <small style='color:#b8ac9a;line-height:1.7'>
-    <b style='color:#efe5d6;letter-spacing:0.08em'>GROVER</b><br>
-    Generative Reasoning and<br>
-    Objective Verification for<br>
-    End-to-end Reporting
-    </small>
-    """, unsafe_allow_html=True)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: OVERVIEW
-# ══════════════════════════════════════════════════════════════════════════════
-if page == "Overview":
-    st.markdown("""
-    <div class='hero'>
-        <div class='hero-grid'>
-            <div>
-                <div class='hero-badge'>Research Framework</div>
-                <div class='hero-title'>GROVER</div>
-                <div class='hero-subtitle'>
-                    Generative Reasoning and Objective Verification for End-to-end Reporting<br>
-                    자연어 질문에서 SQL 생성과 결과 해석, 최종 리포트 생성까지 이어지는 전체 흐름을
-                    하나의 평가 단위로 다루는 NL2SQL 연구 프레임워크입니다.
-                </div>
-                <div class='hero-meta'>
-                    <div class='hero-meta-item'>
-                        <div class='hero-meta-label'>Problem Shift</div>
-                        <div class='hero-meta-value'>SQL correctness → analysis reliability</div>
-                    </div>
-                    <div class='hero-meta-item'>
-                        <div class='hero-meta-label'>Evidence Unit</div>
-                        <div class='hero-meta-value'>main SQL + support SQL bundle</div>
-                    </div>
-                    <div class='hero-meta-item'>
-                        <div class='hero-meta-label'>Core Output</div>
-                        <div class='hero-meta-value'>table-grounded report with verifiable claims</div>
-                    </div>
-                </div>
-            </div>
-            <div class='hero-panel'>
-                <div class='hero-panel-label'>Research Thesis</div>
-                <div class='hero-panel-copy'>
-                    핵심은 더 정교한 SQL 하나를 만드는 것이 아니라, 질문을 설명할 수 있는 evidence를
-                    충분히 수집하고 그 근거를 바탕으로 검증 가능한 report를 생성하는 데 있습니다.
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 핵심 문제 의식
-    st.markdown("<div class='section-header'>Core Problem</div>", unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("""
-        <div class='card card-red'>
-            <h4 style='color:#b91c1c;margin:0 0 10px'>❌ 기존 NL2SQL의 한계</h4>
-            <ul style='color:#374151;margin:0;padding-left:18px;line-height:1.8;font-size:0.92rem'>
-                <li>"SQL이 문법적으로 맞는가?"만 평가</li>
-                <li>실행 결과 테이블을 어떻게 해석할지는 다루지 않음</li>
-                <li>단일 SQL 하나로 복잡한 비즈니스 질문에 답하려 함</li>
-                <li>최종 사용자에게 의미 있는 인사이트 제공 여부 미평가</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown("""
-        <div class='card card-green'>
-            <h4 style='color:#15803d;margin:0 0 10px'>✅ GROVER의 접근</h4>
-            <ul style='color:#374151;margin:0;padding-left:18px;line-height:1.8;font-size:0.92rem'>
-                <li>SQL + 결과 해석 + 리포트 생성을 통합 평가</li>
-                <li>Main SQL + Support SQL <b>bundle</b>로 근거 확보</li>
-                <li>3단계 평가 프레임워크(SQL / DB / Insight Level)</li>
-                <li>숫자 정확성, 커버리지, 의도 정렬까지 측정</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # 핵심 파이프라인 개요
-    st.markdown("<div class='section-header'>Pipeline Shift</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='color:#475569;margin-bottom:20px'>
-    기존 NL2SQL이 <b>q → z₀</b> (질문 → SQL 하나)에 집중했다면, GROVER는 다음 전체 흐름을 다룹니다.
-    </p>
-    """, unsafe_allow_html=True)
-
-    cols = st.columns(5)
-    steps = [
-        ("01", "Question", "q", "사용자 질문의 의도와 분석 단위를 파악"),
-        ("02", "SQL Bundle", "Z = {z₀, z₁, …, zₖ}", "main query와 support query를 함께 생성"),
-        ("03", "Execution", "R = {r₀, r₁, …, rₖ}", "실행 결과를 검증하고 유효한 evidence 확보"),
-        ("04", "Interpretation", "table analysis", "결과 테이블을 claim 단위로 해석"),
-        ("05", "Reporting", "y", "최종 답변과 caveat를 구조화해 제시"),
-    ]
-    for i, (idx, label, sub, desc) in enumerate(steps):
-        with cols[i]:
-            st.markdown(f"""
-            <div class='stage-card'>
-                <div class='stage-index'>Stage {idx}</div>
-                <div class='stage-title'>{label}</div>
-                <div class='stage-code'>{sub}</div>
-                <div class='stage-copy'>{desc}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # 4대 Contribution
-    st.markdown("<div class='section-header'>Contributions</div>", unsafe_allow_html=True)
-
-    contributions = [
-        ("C1", "End-to-End Problem Reformulation",
-         "NL2SQL을 단일 SQL 생성 문제가 아니라 SQL 생성 → 실행 → 리포팅으로 이어지는 end-to-end pipeline으로 재정의합니다."),
-        ("C2", "Evidence-Bundled NL2SQL Pipeline",
-         "단일 SQL 대신 Main SQL + Support SQL bundle을 생성하여, 복잡한 비즈니스 질문에 필요한 근거를 충분히 확보합니다."),
-        ("C3", "GROVER Evaluation Framework",
-         "SQL-Level · DB-Level · Insight-Level의 3계층 평가 체계를 제안합니다. 특히 Insight-Level은 TG-F1, NumAcc, Coverage, Intent Alignment를 포함하는 새로운 메트릭입니다."),
-        ("C4", "Human-Verified Evaluation Protocol",
-         "자동 메트릭의 한계를 보완하기 위해 150~200개 규모의 GROVER-Bridge 검증 셋을 구축하고, human judgment와의 상관도를 검증합니다."),
-    ]
-    for tag, title, desc in contributions:
-        st.markdown(f"""
-        <div class='contribution'>
-            <span class='contribution-tag'>{tag}</span>
-            <h4 style='margin:0 0 6px;color:#1e293b;font-size:1rem'>{title}</h4>
-            <p style='margin:0;color:#475569;font-size:0.9rem;line-height:1.6'>{desc}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # GROVER Score Vector
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header'>Score Vector</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='color:#475569;margin-bottom:16px'>
-    GROVER는 단일 점수 대신 세 축의 <b>score vector</b>를 기본 출력으로 사용합니다.
-    단일 점수로 순위를 매기면 "어디서 잘하고 어디서 실패하는지"를 숨기게 됩니다.
-    </p>
-    """, unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("""
-        <div class='score-card sql'>
-            <div class='score-card-label'>Baseline Layer</div>
-            <div class='score-card-value'>S_sql</div>
-            <div class='score-card-body'>
-                SQL-Level Score<br>
-                문법 정확도와 semantic execution correctness를 측정합니다.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown("""
-        <div class='score-card db'>
-            <div class='score-card-label'>System Layer</div>
-            <div class='score-card-value'>S_db</div>
-            <div class='score-card-body'>
-                DB-Level Score<br>
-                실행 시간, retry 수, DB call efficiency를 함께 봅니다.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    with c3:
-        st.markdown("""
-        <div class='score-card insight'>
-            <div class='score-card-label'>User-Facing Layer</div>
-            <div class='score-card-value'>S_insight</div>
-            <div class='score-card-body'>
-                Insight-Level Score<br>
-                groundedness, numeric correctness, coverage를 포함합니다.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='score-vector'>
-        G = (S<sub>sql</sub>, S<sub>db</sub>, S<sub>insight</sub>)
-    </div>
-    """, unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: INTRODUCTION
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Introduction":
-    st.markdown("<div class='section-header'>Introduction</div>", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='card card-blue'>
-        <h4 style='color:#1d4ed8;margin:0 0 10px'>NL2SQL이란?</h4>
-        <p style='color:#374151;margin:0;line-height:1.7;font-size:0.93rem'>
-        자연어 질문(Natural Language)을 SQL 쿼리로 자동 변환하여, 비전문가도 데이터베이스에 접근할 수 있게 하는 기술입니다.
-        예를 들어 "지난 분기 매출이 가장 높은 지역은 어디인가요?"라는 질문을 
-        <code>SELECT region, SUM(revenue) FROM sales WHERE quarter='Q3' GROUP BY region ORDER BY 2 DESC LIMIT 1</code>
-        같은 SQL로 자동 변환합니다.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 1.1 연구 배경
-    st.markdown("<div class='subsection-header'>1.1 NL2SQL의 최근 흐름</div>", unsafe_allow_html=True)
-
-    benchmarks = [
-        ("WikiSQL / Spider", "초기", "#6b7280", "단순 text-to-SQL 대중화. 문법 정확도 중심의 평가."),
-        ("BIRD", "2023", "#3b82f6", "실제 DB 환경 강조. Database values, external knowledge, SQL efficiency 평가."),
-        ("Spider 2.0", "2025", "#8b5cf6", "632개 실제 enterprise workflow 문제. 1,000개 이상의 컬럼, multi-query, metadata search 요구."),
-        ("BIRD-INTERACT", "2025", "#06b6d4", "clarification, knowledge retrieval, 실행 오류 복구까지 포함하는 대화형 benchmark."),
-    ]
-    for name, year, color, desc in benchmarks:
-        st.markdown(f"""
-        <div style='display:flex;gap:14px;align-items:flex-start;padding:14px 18px;background:white;
-                    border-radius:10px;border:1px solid #e2e8f0;margin-bottom:10px;
-                    border-left:4px solid {color}'>
-            <div style='min-width:90px'>
-                <div style='font-weight:700;color:#1e293b;font-size:0.95rem'>{name}</div>
-                <div style='font-size:0.78rem;color:{color};font-weight:600'>{year}</div>
-            </div>
-            <div style='color:#475569;font-size:0.88rem;line-height:1.6'>{desc}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='example-box'>
-        <div class='example-label'>💡 핵심 인사이트</div>
-        <p style='margin:0;color:#374151;line-height:1.7;font-size:0.92rem'>
-        오늘날 NL2SQL은 더 이상 <b>"질문 하나에 SQL 하나를 정확히 생성하는 문제"</b>로만 볼 수 없습니다.
-        실제 비즈니스에서 사용자가 원하는 것은 SQL 그 자체가 아니라, <b>질문에 대한 신뢰할 수 있는 답변과 인사이트</b>입니다.
-        문제의 중심이 <b>SQL correctness</b>에서 <b>end-to-end analysis reliability</b>로 이동하고 있습니다.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # 1.2 기존 한계
-    st.markdown("<div class='subsection-header'>1.2 기존 연구의 세 가지 한계</div>", unsafe_allow_html=True)
-
-    limits = [
-        ("⚠️", "한계 1: SQL 평가에 머무름",
-         "EX, EM, Test Suite 등 기존 메트릭은 'SQL이 맞는가?'에는 답하지만, '그 결과가 유용하고 신뢰할 수 있는가?'에는 직접 답하지 못합니다.",
-         "#fef3c7", "#d97706"),
-        ("⚠️", "한계 2: SQL 실행 이후 테이블 해석 부재",
-         "BI-Bench, CORGI, MT-RAIG, T2R-bench 등 최근 연구는 테이블 결과를 해석하고 리포트를 생성하는 것이 별도의 핵심 문제임을 보여주지만, NL2SQL 연구와 분리되어 있습니다.",
-         "#fce7f3", "#be185d"),
-        ("⚠️", "한계 3: Benchmark 자체의 신뢰성 문제",
-         "SpotIt은 static DB 기반 실행 평가가 semantic equivalence를 과대평가한다고 지적했고, BIRD와 Spider 2.0-Snow에 상당한 annotation error가 있다고 보고되었습니다(CIDR 2026).",
-         "#f0fdf4", "#15803d"),
-    ]
-    for icon, title, desc, bg, color in limits:
-        st.markdown(f"""
-        <div style='padding:18px 22px;background:{bg};border-radius:12px;
-                    border:1px solid {color}30;margin-bottom:12px'>
-            <h4 style='color:{color};margin:0 0 8px;font-size:1rem'>{icon} {title}</h4>
-            <p style='color:#374151;margin:0;font-size:0.9rem;line-height:1.6'>{desc}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # 1.3 연구 질문
-    st.markdown("<div class='subsection-header'>1.3 이 프로젝트의 핵심 질문 3가지</div>", unsafe_allow_html=True)
-
-    rqs = [
-        ("RQ1", "Algorithm", "SQL 자체만 생성하는 것이 아니라, 최종 리포트 생성에 필요한 evidence를 더 잘 수집하는 SQL generation 전략은 무엇인가?"),
-        ("RQ2", "Table Analysis", "실행 결과를 바탕으로 LLM이 신뢰할 수 있는 자연어 인사이트를 생성하도록 만들려면 어떤 intermediate representation과 리포팅 템플릿이 필요한가?"),
-        ("RQ3", "Evaluation", "SQL correctness와 DB execution efficiency를 넘어, 최종 리포트의 충실성·유용성·groundedness를 어떻게 정량적으로 평가할 수 있는가?"),
-    ]
-    for tag, area, question in rqs:
-        col_a, col_b = st.columns([1, 6])
-        with col_a:
-            st.markdown(f"""
-            <div style='text-align:center;padding:16px 8px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-                        border-radius:12px;color:white'>
-                <div style='font-weight:700;font-size:1.1rem'>{tag}</div>
-                <div style='font-size:0.72rem;opacity:0.85;margin-top:4px'>{area}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col_b:
-            st.markdown(f"""
-            <div style='padding:16px 20px;background:#f8fafc;border-radius:12px;
-                        border:1px solid #e2e8f0;height:100%'>
-                <p style='margin:0;color:#374151;font-size:0.92rem;line-height:1.65'>{question}</p>
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: METHODOLOGY
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Methodology":
-    st.markdown("<div class='section-header'>Methodology</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='color:#475569;margin-bottom:24px;font-size:0.95rem;line-height:1.7'>
-    Methodology는 크게 4개의 Part로 구성됩니다.
-    SQL bundle 생성 전략부터, 결과 해석 방법, 평가 메트릭 설계, 그리고 인간 검증 프로토콜까지 다룹니다.
-    </p>
-    """, unsafe_allow_html=True)
-
-    tabs = st.tabs([
-        "2.1 문제 정의",
-        "2.2 전체 파이프라인",
-        "2.3 SQL Bundle",
-        "2.4 테이블 분석",
-        "2.5 GROVER Metric",
-        "2.6 인간 평가",
-    ])
-
-    # ── Tab 1: 문제 정의 ─────────────────────────────────────────────────────
-    with tabs[0]:
-        st.markdown("<div class='subsection-header'>2.1 문제 정의와 기본 표기</div>", unsafe_allow_html=True)
-
-        st.markdown("""
-        <p style='color:#475569;line-height:1.7'>
-        GROVER가 다루는 문제를 수식으로 명확하게 정의합니다.
-        </p>
-        """, unsafe_allow_html=True)
-
-        # 표기 정의 표
-        st.markdown("""
-        <table>
-        <tr><th>기호</th><th>의미</th><th>예시</th></tr>
-        <tr><td><code>q</code></td><td>자연어 질문</td><td>"지난 분기 매출이 왜 감소했는가?"</td></tr>
-        <tr><td><code>D</code></td><td>데이터베이스</td><td>sales_db (실제 DB 파일)</td></tr>
-        <tr><td><code>S</code></td><td>스키마 정보</td><td>테이블명, 컬럼명, 타입 등</td></tr>
-        <tr><td><code>Z = {z₀, z₁, …, zₖ}</code></td><td>SQL Bundle (z₀=main, z₁…=support)</td><td>메인 쿼리 + 보조 쿼리들</td></tr>
-        <tr><td><code>R = {r₀, r₁, …, rₖ}</code></td><td>각 SQL 실행 결과 테이블</td><td>결과 데이터프레임들</td></tr>
-        <tr><td><code>y</code></td><td>최종 자연어 리포트</td><td>"북미 지역 매출이 18% 감소했습니다..."</td></tr>
-        <tr><td><code>C*</code></td><td>Gold claim set (정답 주장 목록)</td><td>사람이 검증한 정답 statements</td></tr>
-        <tr><td><code>Ĉ</code></td><td>예측 claim set (생성된 주장 목록)</td><td>모델이 생성한 리포트에서 추출</td></tr>
-        </table>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            <div style='padding:20px;background:#fef2f2;border-radius:14px;border:1px solid #fecdd3'>
-                <h4 style='color:#dc2626;margin:0 0 10px'>❌ 기존 NL2SQL 목표</h4>
-                <div style='text-align:center;font-size:1.3rem;font-family:monospace;
-                            padding:16px;background:white;border-radius:8px;color:#374151;
-                            border:1px solid #fecdd3'>
-                    q → z₀
-                </div>
-                <p style='color:#6b7280;font-size:0.85rem;margin:12px 0 0;text-align:center'>
-                    질문 하나 → SQL 하나
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown("""
-            <div style='padding:20px;background:#f0fdf4;border-radius:14px;border:1px solid #bbf7d0'>
-                <h4 style='color:#15803d;margin:0 0 10px'>✅ GROVER 목표</h4>
-                <div style='text-align:center;font-size:1.1rem;font-family:monospace;
-                            padding:16px;background:white;border-radius:8px;color:#374151;
-                            border:1px solid #bbf7d0'>
-                    q → Z → R → y
-                </div>
-                <p style='color:#6b7280;font-size:0.85rem;margin:12px 0 0;text-align:center'>
-                    질문 → SQL Bundle → 실행 결과 → 최종 리포트
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='example-box' style='margin-top:20px'>
-            <div class='example-label'>📝 구체적인 예시로 이해하기</div>
-            <p style='color:#374151;margin:0;line-height:1.7;font-size:0.92rem'>
-            <b>질문 q</b>: "지난 분기 북미 매출이 왜 감소했나요?"<br><br>
-            <b>기존 방식</b>: <code>SELECT SUM(revenue) FROM sales WHERE region='NA' AND quarter='Q3'</code> 한 줄만 생성. 숫자만 나오고 "왜?"에 대한 답은 없음.<br><br>
-            <b>GROVER 방식</b>: <br>
-            &nbsp;&nbsp;• z₀ (main): 전체 매출 감소량 집계<br>
-            &nbsp;&nbsp;• z₁ (support): 시간별 추세 쿼리<br>
-            &nbsp;&nbsp;• z₂ (support): 세그먼트별 분해 (enterprise vs SMB)<br>
-            &nbsp;&nbsp;• z₃ (support): 가장 큰 감소 요인 (top negative driver)<br>
-            → 이 결과들을 종합해 "북미 매출 18% 감소, 그중 enterprise 고객이 절반 이상 차지"라는 신뢰할 수 있는 리포트 y 생성
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Tab 2: 전체 파이프라인 ───────────────────────────────────────────────
-    with tabs[1]:
-        st.markdown("<div class='subsection-header'>2.2 GROVER 6단계 파이프라인</div>", unsafe_allow_html=True)
-
-        pipeline_steps = [
-            ("1", "Question Typing", "질문 유형 분류",
-             "질문을 <b>Descriptive</b>(사실 요약) 또는 <b>Diagnostic</b>(원인 분석)으로 분류합니다. "
-             "첫 버전에서는 predictive와 prescriptive는 제외하고, 이 두 유형에 집중합니다.",
-             "Q: '지난 분기 매출 총액은?' → Descriptive<br>Q: '왜 매출이 감소했나?' → Diagnostic"),
-            ("2", "Schema / Value Retrieval", "관련 스키마·값 검색",
-             "질문과 관련된 <b>테이블, 컬럼, 실제 값</b>을 검색하여 대규모 스키마에서 필요한 부분만 추립니다(pruning). "
-             "최신 text-to-SQL 연구에서 가장 중요한 병목 중 하나입니다.",
-             "1,000개 컬럼이 있는 DB에서 질문 관련 컬럼 20개만 선택 → LLM 입력 토큰 절약"),
-            ("3", "SQL Bundle Generation", "SQL 묶음 생성",
-             "Main SQL 하나만 아니라 <b>Support SQL을 함께 생성</b>합니다. "
-             "Diagnostic 질문이면 trend query, breakdown query, driver query를 자동 생성합니다.",
-             "Diagnostic 질문의 경우: trend(추세) + segment(분해) + driver(요인) 쿼리 자동 생성"),
-            ("4", "Execution and Verification", "실행 및 검증",
-             "생성된 SQL bundle을 실제 DB에서 실행하고, <b>syntax error, empty result, trivial result</b>를 점검합니다. "
-             "문제가 있으면 retry 또는 candidate 교체를 수행합니다.",
-             "빈 결과 반환 → 다른 candidate SQL로 교체 후 재실행"),
-            ("5", "Structured Report Generation", "구조화된 리포트 생성",
-             "실행 결과를 바탕으로 <b>Direct Answer, Supporting Claims, Caveat</b>를 포함한 "
-             "구조화된 리포트를 생성합니다. 자유로운 장문 생성 대신 atomic claim 중심으로 구조화합니다.",
-             "직접 답변 + 근거 claim 3개 + 한계 명시 형식으로 출력"),
-            ("6", "Report-aware Selection / Verification", "리포트 품질 기반 선택",
-             "여러 SQL bundle candidate 중 <b>최종 리포트 품질을 가장 높이는 bundle을 선택</b>합니다. "
-             "기존 selector가 SQL 자체를 선택했다면, GROVER는 report quality를 기준으로 선택합니다.",
-             "SQL 정확도는 비슷하지만 더 완전한 인사이트를 제공하는 bundle 선택"),
-        ]
-
-        for num, title, subtitle, desc, ex in pipeline_steps:
-            with st.expander(f"Step {num}: {title} — {subtitle}", expanded=(num == "1")):
-                col_a, col_b = st.columns([3, 2])
-                with col_a:
-                    st.markdown(f"""
-                    <p style='color:#374151;font-size:0.93rem;line-height:1.7;margin:0 0 12px'>{desc}</p>
-                    """, unsafe_allow_html=True)
-                with col_b:
-                    st.markdown(f"""
-                    <div class='example-box'>
-                        <div class='example-label'>예시</div>
-                        <p style='font-size:0.85rem;color:#374151;margin:0;line-height:1.6'>{ex}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-    # ── Tab 3: SQL Bundle ────────────────────────────────────────────────────
-    with tabs[2]:
-        st.markdown("<div class='subsection-header'>2.3 Part I: Evidence-Bundled NL2SQL Algorithm</div>", unsafe_allow_html=True)
-
-        # 왜 bundle인가
-        st.markdown("""
-        <div class='card card-orange'>
-            <h4 style='color:#b45309;margin:0 0 10px'>❓ 왜 Single SQL이 아니라 SQL Bundle인가?</h4>
-            <p style='color:#374151;margin:0;line-height:1.7;font-size:0.92rem'>
-            실제 사용자가 "지난 분기 매출이 왜 감소했는가?"라고 묻는다면,
-            단일 aggregate query 하나만으로는 충분하지 않습니다. 이 질문에 답하려면 보통 다음 정보가 모두 필요합니다.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        info_needed = [
-            ("📈", "전체 추세(Trend)", "시간 흐름에 따른 매출 변화"),
-            ("🔍", "세그먼트별 분해(Breakdown)", "지역·제품·고객군별 기여도"),
-            ("🎯", "주요 요인(Driver)", "가장 큰 감소를 일으킨 원인"),
-        ]
-        cols = st.columns(3)
-        for i, (icon, title, desc) in enumerate(info_needed):
-            with cols[i]:
-                st.markdown(f"""
-                <div style='text-align:center;padding:20px 12px;background:white;border-radius:14px;
-                            border:1px solid #e2e8f0;height:140px'>
-                    <div style='font-size:1.8rem'>{icon}</div>
-                    <div style='font-weight:600;color:#1e293b;font-size:0.9rem;margin:8px 0 6px'>{title}</div>
-                    <div style='color:#64748b;font-size:0.82rem'>{desc}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # Bundle 구조
-        st.markdown("<div class='subsection-header'>SQL Bundle 생성 전략 — 질문 유형별 차이</div>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            <div style='padding:22px;background:#eff6ff;border-radius:16px;border:1px solid #bfdbfe'>
-                <h4 style='color:#1d4ed8;margin:0 0 16px'>📋 Descriptive Query</h4>
-                <div style='background:white;border-radius:10px;padding:14px 16px;margin-bottom:10px;
-                            border-left:3px solid #3b82f6'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#3b82f6;margin-bottom:4px'>MAIN SQL</div>
-                    <div style='font-size:0.88rem;color:#374151'>direct answer query<br>
-                    <code style='font-size:0.8rem'>SELECT SUM(revenue) ...</code></div>
-                </div>
-                <div style='background:white;border-radius:10px;padding:14px 16px;
-                            border-left:3px solid #93c5fd'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#60a5fa;margin-bottom:4px'>SUPPORT SQL (optional)</div>
-                    <div style='font-size:0.88rem;color:#374151'>granularity check 또는 top-k evidence query</div>
-                </div>
-                <div class='example-box' style='margin-top:14px'>
-                    <div class='example-label'>예시 질문</div>
-                    <p style='font-size:0.85rem;color:#374151;margin:0'>"지난 분기 전체 매출은 얼마인가?"</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown("""
-            <div style='padding:22px;background:#faf5ff;border-radius:16px;border:1px solid #ddd6fe'>
-                <h4 style='color:#7e22ce;margin:0 0 16px'>🔬 Diagnostic Query</h4>
-                <div style='background:white;border-radius:10px;padding:14px 16px;margin-bottom:8px;
-                            border-left:3px solid #a855f7'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#a855f7;margin-bottom:4px'>MAIN SQL</div>
-                    <div style='font-size:0.88rem;color:#374151'>target KPI difference query</div>
-                </div>
-                <div style='background:white;border-radius:10px;padding:14px 16px;margin-bottom:8px;
-                            border-left:3px solid #c084fc'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#c084fc;margin-bottom:4px'>SUPPORT SQL 1</div>
-                    <div style='font-size:0.88rem;color:#374151'>time trend query (시간 추세)</div>
-                </div>
-                <div style='background:white;border-radius:10px;padding:14px 16px;margin-bottom:8px;
-                            border-left:3px solid #e9d5ff'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#d8b4fe;margin-bottom:4px'>SUPPORT SQL 2</div>
-                    <div style='font-size:0.88rem;color:#374151'>segment breakdown query (세그먼트 분해)</div>
-                </div>
-                <div style='background:white;border-radius:10px;padding:14px 16px;
-                            border-left:3px solid #f3e8ff'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#e9d5ff;margin-bottom:4px'>SUPPORT SQL 3</div>
-                    <div style='font-size:0.88rem;color:#374151'>top positive/negative driver query (요인 분석)</div>
-                </div>
-                <div class='example-box' style='margin-top:14px'>
-                    <div class='example-label'>예시 질문</div>
-                    <p style='font-size:0.85rem;color:#374151;margin:0'>"지난 분기 매출이 왜 감소했는가?"</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # Candidate selection
-        st.markdown("<div class='subsection-header'>Candidate 생성 및 Report-aware Selection</div>", unsafe_allow_html=True)
-        st.markdown("""
-        <p style='color:#475569;font-size:0.92rem;line-height:1.7;margin-bottom:16px'>
-        하나의 질문에 대해 여러 SQL bundle candidate를 생성하고, 최종적으로 <b>리포트 품질을 기준</b>으로 가장 좋은 것을 선택합니다.
-        이것이 기존 CHASE-SQL의 candidate selection과의 핵심 차이점입니다.
-        </p>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <table>
-        <tr><th>다양성 확보 방법</th><th>설명</th></tr>
-        <tr><td>Prompt Variation</td><td>같은 질문을 다른 프롬프트로 여러 번 물어봄</td></tr>
-        <tr><td>Decomposition Variation</td><td>질문을 다른 방식으로 분해하여 각각 SQL 생성</td></tr>
-        <tr><td>Retrieval Variation</td><td>다른 스키마/값 검색 전략으로 다양한 컨텍스트 제공</td></tr>
-        </table>
-        """, unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            <div style='padding:18px;background:#fef2f2;border-radius:12px;border:1px solid #fecdd3'>
-                <h4 style='color:#dc2626;margin:0 0 8px;font-size:0.95rem'>❌ 기존 SQL-only Selector</h4>
-                <p style='color:#374151;font-size:0.87rem;margin:0;line-height:1.6'>
-                후보 중 SQL 정확도 점수가 가장 높은 것을 선택.<br>
-                → SQL은 맞지만 리포트에 필요한 정보가 부족할 수 있음.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown("""
-            <div style='padding:18px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0'>
-                <h4 style='color:#15803d;margin:0 0 8px;font-size:0.95rem'>✅ GROVER Report-aware Selector</h4>
-                <p style='color:#374151;font-size:0.87rem;margin:0;line-height:1.6'>
-                후보 중 생성 가능한 리포트의 품질이 가장 높은 것을 선택.<br>
-                → SQL 정확도 + 인사이트 완성도를 모두 고려.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # ── Tab 4: 테이블 분석 ───────────────────────────────────────────────────
-    with tabs[3]:
-        st.markdown("<div class='subsection-header'>2.4 Part II: NL2SQL 이후 LLM의 Table Data Analysis</div>", unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='card card-blue'>
-            <h4 style='color:#1d4ed8;margin:0 0 10px'>왜 별도 모듈인가?</h4>
-            <p style='color:#374151;margin:0;line-height:1.7;font-size:0.92rem'>
-            기존 NL2SQL 시스템은 SQL 실행 후 결과 테이블을 그냥 사용자에게 보여줬습니다.
-            하지만 실제 사용자 관점에서는 <b>테이블 그 자체보다 해석된 의미</b>가 더 중요합니다.
-            BI-Bench, MT-RAIG, T2R-bench는 SQL 이후의 테이블 해석과 리포트 생성이
-            <b>별도의 핵심 연구 문제</b>임을 보여줍니다.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # Structured Report Format
-        st.markdown("<div class='subsection-header'>구조화된 리포트 포맷</div>", unsafe_allow_html=True)
-        st.markdown("""
-        <p style='color:#475569;font-size:0.92rem;line-height:1.7;margin-bottom:16px'>
-        리포트 평가를 가능하게 하려면 출력 포맷이 어느 정도 구조화되어야 합니다.
-        자유로운 장문 생성 대신 아래 4개의 필드로 구성된 리포트를 생성합니다.
-        </p>
-        """, unsafe_allow_html=True)
-
-        report_fields = [
-            ("Direct Answer", "질문에 대한 1~2문장 요약 답변", "#3b82f6",
-             "북미 지역의 enterprise segment 부진이 지난 분기 매출 감소의 주된 원인입니다."),
-            ("Supporting Claims", "최대 3개의 atomic claim (검증 가능한 단위 주장)", "#8b5cf6",
-             "Claim 1: 북미 매출 전분기 대비 18% 감소\nClaim 2: Enterprise 고객군 감소가 전체의 절반 이상\nClaim 3: 전 지역 중 북미 감소폭 최대"),
-            ("Evidence Mapping", "각 claim이 어떤 result table에 근거하는지 표시", "#06b6d4",
-             "Claim 1 → r₀ (매출 집계 테이블)\nClaim 2 → r₂ (세그먼트 분해 테이블)\nClaim 3 → r₁ (지역별 추세 테이블)"),
-            ("Caveat / Limitation", "데이터 또는 해석의 한계가 있으면 명시", "#f59e0b",
-             "프로모션 종료 효과와 가격 정책 변화는 현재 테이블만으로 직접 검증되지 않습니다."),
-        ]
-
-        for field, desc, color, ex in report_fields:
-            with st.expander(f"📌 {field}", expanded=(field == "Direct Answer")):
-                col_a, col_b = st.columns([2, 3])
-                with col_a:
-                    st.markdown(f"""
-                    <div style='padding:16px;background:{color}10;border-radius:10px;border:1px solid {color}30'>
-                        <p style='color:#374151;margin:0;font-size:0.92rem;line-height:1.65'>{desc}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                with col_b:
-                    st.markdown(f"""
-                    <div class='example-box'>
-                        <div class='example-label'>예시</div>
-                        <pre style='font-size:0.83rem;color:#374151;margin:0;white-space:pre-wrap;
-                                    font-family:Pretendard,sans-serif;line-height:1.6'>{ex}</pre>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # Claim 유형
-        st.markdown("<div class='subsection-header'>Atomic Claim 4가지 유형</div>", unsafe_allow_html=True)
-        st.markdown("""
-        <p style='color:#475569;font-size:0.92rem;line-height:1.7;margin-bottom:16px'>
-        리포트의 각 문장을 <b>claim 단위</b>로 분해합니다. 유형마다 검증 방법이 달라집니다.
-        </p>
-        """, unsafe_allow_html=True)
-
-        claims = [
-            ("numeric claim", "badge-numeric", "값, 비율, 증감률", "결과 테이블로 deterministic check 가능",
-             '"북미 매출이 18% 감소했습니다."'),
-            ("comparison claim", "badge-comparison", "A > B, 증가/감소 비교", "결과 테이블로 deterministic check 가능",
-             '"Enterprise 감소폭이 SMB보다 큽니다."'),
-            ("ranking claim", "badge-ranking", "top-1, highest, lowest", "결과 테이블로 deterministic check 가능",
-             '"전 지역 중 북미 감소폭이 가장 큽니다."'),
-            ("diagnostic claim", "badge-diagnostic", "원인, 패턴, 설명", "LLM-as-a-judge + human audit 필요",
-             '"프로모션 종료가 enterprise 이탈을 가속화했을 가능성이 있습니다."'),
-        ]
-
-        for name, badge, desc, verify, ex in claims:
-            st.markdown(f"""
-            <div style='padding:16px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;
-                        margin-bottom:10px;display:flex;gap:16px;align-items:flex-start'>
-                <div style='min-width:140px'>
-                    <span class='badge {badge}'>{name}</span>
-                    <div style='font-size:0.8rem;color:#64748b;margin-top:6px'>{desc}</div>
-                </div>
-                <div style='flex:1;border-left:1px solid #e2e8f0;padding-left:16px'>
-                    <div style='font-size:0.82rem;color:#475569;margin-bottom:6px'>
-                        <b>검증:</b> {verify}
-                    </div>
-                    <div style='font-size:0.85rem;color:#1e293b;background:#f8fafc;
-                                padding:6px 12px;border-radius:6px;font-style:italic'>"{ex[1:-1]}"</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='card card-green' style='margin-top:8px'>
-            <h4 style='color:#15803d;margin:0 0 8px'>💡 Hybrid 검증 구조의 장점</h4>
-            <p style='color:#374151;margin:0;font-size:0.9rem;line-height:1.65'>
-            numeric / comparison / ranking claim은 결과 테이블로 <b>자동 검증</b>이 가능하고,
-            diagnostic claim만 LLM-as-a-judge + human audit를 사용합니다.
-            이 hybrid 구조가 pure judge metric보다 <b>더 안정적이고 신뢰할 수 있습니다.</b>
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Tab 5: GROVER Metric ─────────────────────────────────────────────────
-    with tabs[4]:
-        st.markdown("<div class='subsection-header'>2.5 Part III: GROVER Metric 설계</div>", unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='card card-purple'>
-            <h4 style='color:#7e22ce;margin:0 0 10px'>설계 5원칙</h4>
-            <ol style='color:#374151;margin:0;padding-left:20px;line-height:1.9;font-size:0.92rem'>
-                <li>SQL correctness만 보지 않는다</li>
-                <li>judge-only metric에 의존하지 않는다</li>
-                <li><b>table-grounded verification</b>을 우선한다</li>
-                <li>질문 유형에 따라 요구되는 인사이트를 다르게 평가한다</li>
-                <li>human judgment와의 정렬을 반드시 검증한다</li>
-            </ol>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # Level 1
-        st.markdown("""
-        <div class='metric-level level-sql'>
-            <h3 style='color:#1d4ed8'>🔷 Level 1: SQL-Level</h3>
-            <p>기존 text-to-SQL 평가 메트릭을 그대로 활용합니다. "SQL이 맞는가?"를 평가하는 baseline layer입니다.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <table>
-        <tr><th>메트릭</th><th>설명</th><th>역할</th></tr>
-        <tr><td><b>EX</b> (Execution Accuracy)</td><td>예측 SQL의 실행 결과가 정답과 일치하는가</td><td>핵심 메트릭</td></tr>
-        <tr><td><b>TS</b> (Test Suite Accuracy)</td><td>다양한 test condition에서 semantic equivalence를 만족하는가</td><td>핵심 메트릭</td></tr>
-        <tr><td><b>SF1</b> (Soft F1)</td><td>execution result 기반의 부드러운 유사도 측정</td><td>핵심 메트릭</td></tr>
-        <tr><td><b>EM</b> (Exact Match)</td><td>SQL 문자열이 완전히 일치하는가</td><td>디버깅용 보조 메트릭</td></tr>
-        </table>
-        """, unsafe_allow_html=True)
-
-        render_formula(
-            r"S_{\mathrm{sql}} = \alpha_1 \cdot EX + \alpha_2 \cdot TS + \alpha_3 \cdot SF1",
-            "EM은 semantic equivalence를 제대로 반영하지 못하기 때문에 main score에서 제외하고 보조 지표로 사용합니다.",
-        )
-
-        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-        # Level 2
-        st.markdown("""
-        <div class='metric-level level-db'>
-            <h3 style='color:#15803d'>🟢 Level 2: DB-Level</h3>
-            <p>"실행되느냐"를 넘어 <b>"얼마나 효율적으로 실행되느냐"</b>를 평가합니다. agentic pipeline의 효율을 보여줍니다.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <table>
-        <tr><th>측정 항목</th><th>설명</th></tr>
-        <tr><td>Normalized execution time</td><td>실행 시간을 정규화한 값</td></tr>
-        <tr><td>R-VES (valid efficiency score)</td><td>BIRD에서 제안한 효율성 메트릭 계열</td></tr>
-        <tr><td>Retry count</td><td>SQL 실패 후 재시도 횟수 (적을수록 좋음)</td></tr>
-        <tr><td>DB call count</td><td>총 DB 호출 횟수 (적을수록 효율적)</td></tr>
-        <tr><td>Memory usage (optional)</td><td>환경 노이즈가 크므로 appendix로 처리</td></tr>
-        </table>
-        """, unsafe_allow_html=True)
-
-        render_formula(
-            r"S_{\mathrm{db}} = \beta_1 \cdot \widetilde{RVES} + \beta_2 \cdot (1 - \widetilde{Retry}) + \beta_3 \cdot (1 - \widetilde{Calls})",
-            r"\(\widetilde{RVES}\), \(\widetilde{Retry}\), \(\widetilde{Calls}\)는 모두 \([0,1]\) 범위로 정규화한 값입니다.",
-        )
-
-        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-        # Level 3
-        st.markdown("""
-        <div class='metric-level level-insight'>
-            <h3 style='color:#7e22ce'>🔮 Level 3: Insight-Level (핵심 Contribution)</h3>
-            <p>최종 리포트가 <b>질문 의도에 맞고, 결과 테이블에 근거하며, 숫자적으로 정확하고, 핵심 요소를 빠짐없이 포함하는지</b>를 평가합니다.</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        insight_metrics = [
-            ("(1) Table-Grounded F1 (TG-F1)", "#a855f7",
-             "생성된 리포트의 claim이 실제 실행 결과 테이블로 뒷받침되는지 평가합니다. "
-             "Ragas Faithfulness의 철학을 계승하지만, retrieved text가 아닌 <b>executed result tables</b>를 근거로 사용합니다.",
-             r"""\begin{aligned}
-\mathrm{TG\text{-}P} &= \frac{\sum_{c \in \hat{C}} \mathbb{1}[c \vdash R]}{|\hat{C}|} \\
-\mathrm{TG\text{-}R} &= \frac{\sum_{c^\ast \in C^\ast} \mathbb{1}[c^\ast \text{ is covered by } y]}{|C^\ast|} \\
-\mathrm{TG\text{-}F1} &= \frac{2 \cdot \mathrm{TG\text{-}P} \cdot \mathrm{TG\text{-}R}}{\mathrm{TG\text{-}P} + \mathrm{TG\text{-}R}}
-\end{aligned}""",
-             "생성 claim 중 테이블로 지지되는 비율과, gold claim 중 리포트가 커버한 비율을 함께 반영합니다.",
-             '"북미 매출 18% 감소"라는 claim → r₀ 테이블에서 직접 계산 가능 → ✅ supported',
-             0.35),
-            ("(2) Numeric Consistency (NumAcc)", "#3b82f6",
-             "리포트에 포함된 수치 claim의 정확성을 측정합니다. "
-             "숫자 하나만 틀려도 전체 리포트의 신뢰성이 크게 떨어지기 때문에 별도로 측정합니다.",
-             r"\mathrm{NumAcc} = \frac{\# \text{ correct numerical claims}}{\# \text{ all numerical claims}}",
-             "수치 claim만 따로 분리해서 정답 비율을 계산합니다.",
-             '"18%"라고 했는데 실제는 "17.8%" → 허용 오차 내면 correct로 처리',
-             0.30),
-            ("(3) Question Coverage (Cov)", "#06b6d4",
-             "질문 유형마다 반드시 포함되어야 하는 analytical slot이 모두 채워졌는지 평가합니다. "
-             "'말은 자연스럽지만 중요한 요소를 빠뜨린 답변'을 페널티할 수 있습니다.",
-             r"\mathrm{Cov} = \frac{\# \text{ required slots addressed}}{\# \text{ required slots}}",
-             "Descriptive: [직접 답변, 핵심 값, 관련 세분화] / Diagnostic: [직접 답변, 추세, 세그먼트, 요인, 한계]",
-             'Diagnostic 질문에서 driver(요인) 설명이 없으면 Cov 점수 감소',
-             0.20),
-            ("(4) Intent Alignment (IA)", "#f59e0b",
-             "질문 의도에 맞는 답변이 생성되었는지 평가합니다. "
-             "Descriptive 질문인데 불필요한 recommendation을 길게 생성하거나, "
-             "Diagnostic 질문인데 단순 집계값만 나열하면 낮은 점수를 받습니다.",
-             r"\mathrm{IA} \in [0,1]",
-             "question type별 rubric을 사용해 judge model이 점수를 부여합니다.",
-             '"왜 감소했나?" (Diagnostic)인데 "매출 총액은 100억원" (Descriptive 답변)만 하면 낮은 IA 점수',
-             0.15),
-        ]
-
-        for metric_name, color, desc, formula, note, ex, weight in insight_metrics:
-            with st.expander(f"{'🔮 ' if 'TG' in metric_name else '📊 '}{metric_name} (가중치: {int(weight*100)}%)", expanded=(metric_name.startswith("(1)"))):
-                col_a, col_b = st.columns([3, 2])
-                with col_a:
-                    st.markdown(f"<p style='color:#374151;font-size:0.92rem;line-height:1.7'>{desc}</p>",
-                                unsafe_allow_html=True)
-                    render_formula(formula, note)
-                with col_b:
-                    st.markdown(f"""
-                    <div class='example-box'>
-                        <div class='example-label'>예시</div>
-                        <p style='font-size:0.83rem;color:#374151;margin:0;line-height:1.6'>{ex}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-        st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-        # 종합 점수
-        st.markdown("<div class='subsection-header'>Insight-Level 종합 Score</div>", unsafe_allow_html=True)
-
-        render_formula(
-            r"\begin{aligned}S_{\mathrm{insight}} &= \gamma_1 \cdot \mathrm{TG\text{-}F1} + \gamma_2 \cdot \mathrm{NumAcc} + \gamma_3 \cdot \mathrm{Cov} + \gamma_4 \cdot \mathrm{IA} \\ \gamma_1 + \gamma_2 + \gamma_3 + \gamma_4 &= 1\end{aligned}"
-        )
-
-        weights = [("TG-F1 (근거 충실성)", 35, "#a855f7"),
-                   ("NumAcc (숫자 정확성)", 30, "#3b82f6"),
-                   ("Coverage (커버리지)", 20, "#06b6d4"),
-                   ("Intent Align (의도 정렬)", 15, "#f59e0b")]
-
-        st.markdown("<p style='color:#475569;font-size:0.88rem;margin:12px 0 8px'>초기 가중치 설정 (groundedness와 numeric correctness를 가장 중요하게)</p>", unsafe_allow_html=True)
-        for label, pct, color in weights:
-            st.markdown(f"""
-            <div class='weight-row'>
-                <span class='weight-label'>{label}</span>
-                <div class='weight-bar-bg'>
-                    <div class='weight-bar-fill' style='width:{pct}%;background:{color}'></div>
-                </div>
-                <span class='weight-pct' style='color:{color}'>{pct}%</span>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-
-        # 최종 G
-        st.markdown("""
-        <div class='score-vector-panel'>
-            <div class='score-vector-panel-label'>GROVER Final Score Vector</div>
-        </div>
-        """, unsafe_allow_html=True)
-        render_formula(r"G = \left(S_{\mathrm{sql}}, S_{\mathrm{db}}, S_{\mathrm{insight}}\right)")
-        st.markdown("""
-        <div class='score-vector-panel'>
-            <div class='score-vector-panel-sub'>
-                단일 leaderboard 점수가 필요하면:
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        render_formula(r"\bar{G} = \lambda_1 \cdot S_{\mathrm{sql}} + \lambda_2 \cdot S_{\mathrm{db}} + \lambda_3 \cdot S_{\mathrm{insight}}")
-        st.markdown("""
-        <div class='score-vector-panel'>
-            <div class='score-vector-panel-note'>
-                ※ 연구 논문에서는 vector form을 유지하는 것이 권장됩니다.<br>
-                그래야 시스템이 어디서 잘하고 어디서 실패하는지를 분명하게 보여줄 수 있습니다.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ── Tab 6: 인간 평가 ─────────────────────────────────────────────────────
-    with tabs[5]:
-        st.markdown("<div class='subsection-header'>2.6 Part IV: Human-verified Evaluation Protocol</div>", unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='card card-orange'>
-            <h4 style='color:#b45309;margin:0 0 10px'>⚠️ 왜 인간 평가가 필요한가?</h4>
-            <p style='color:#374151;margin:0;line-height:1.7;font-size:0.92rem'>
-            최근 benchmark noise 문제가 크게 제기되고 있습니다 (SpotIt, CIDR 2026).
-            자동 메트릭만으로 논문을 구성하는 것은 위험합니다.
-            GROVER-Bridge라는 소규모 human-verified subset을 구축하여, 자동 메트릭이 실제로 인간의 판단과 
-            얼마나 잘 일치하는지 검증합니다.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            <div style='padding:20px;background:white;border-radius:14px;border:1px solid #e2e8f0'>
-                <h4 style='color:#1e293b;margin:0 0 14px'>📋 GROVER-Bridge Annotation 항목</h4>
-                <ul style='color:#374151;margin:0;padding-left:18px;line-height:2;font-size:0.9rem'>
-                    <li>질문 유형 (descriptive / diagnostic)</li>
-                    <li>허용 가능한 SQL family 목록</li>
-                    <li>gold support evidence</li>
-                    <li><b>gold atomic claim set</b></li>
-                    <li>required analytical slots</li>
-                    <li>ambiguity / abstention label</li>
-                </ul>
-                <div style='margin-top:16px;padding:12px;background:#f8fafc;border-radius:8px;
-                            text-align:center;border:1px dashed #cbd5e1'>
-                    <div style='font-size:1.4rem;font-weight:700;color:#3b82f6'>150~200</div>
-                    <div style='font-size:0.85rem;color:#64748b'>권장 예시 수 (BIRD/CORGI에서 샘플링)</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown("""
-            <div style='padding:20px;background:white;border-radius:14px;border:1px solid #e2e8f0'>
-                <h4 style='color:#1e293b;margin:0 0 14px'>📏 인간 평가 3개 축</h4>
-                <div style='padding:12px 14px;background:#eff6ff;border-radius:8px;margin-bottom:8px'>
-                    <b style='color:#1d4ed8'>Factual Correctness</b>
-                    <div style='font-size:0.85rem;color:#64748b;margin-top:4px'>사실적으로 맞는가? (1~5 Likert)</div>
-                </div>
-                <div style='padding:12px 14px;background:#f0fdf4;border-radius:8px;margin-bottom:8px'>
-                    <b style='color:#15803d'>Usefulness</b>
-                    <div style='font-size:0.85rem;color:#64748b;margin-top:4px'>실제로 유용한가? (1~5 Likert)</div>
-                </div>
-                <div style='padding:12px 14px;background:#faf5ff;border-radius:8px'>
-                    <b style='color:#7e22ce'>Completeness</b>
-                    <div style='font-size:0.85rem;color:#64748b;margin-top:4px'>필요한 내용이 다 있는가? (1~5 Likert)</div>
-                </div>
-                <div style='margin-top:14px;font-size:0.85rem;color:#475569'>
-                    → 최종적으로 GROVER-Insight와의 <b>Spearman correlation</b> 측정
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("""
-        <div class='card card-green' style='margin-top:16px'>
-            <h4 style='color:#15803d;margin:0 0 8px'>이 subset으로 검증할 3가지</h4>
-            <ol style='color:#374151;margin:0;padding-left:20px;line-height:1.9;font-size:0.9rem'>
-                <li>GROVER-Insight와 human judgment의 correlation</li>
-                <li>vanilla Ragas metric과의 비교 (왜 table-specific 재설계가 필요한가)</li>
-                <li>SQL-level metric과 end-to-end usefulness 간의 괴리 확인</li>
-            </ol>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: EXPERIMENTAL
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "Experimental":
-    st.markdown("<div class='section-header'>Experimental Design</div>", unsafe_allow_html=True)
-
-    # Research Questions
-    st.markdown("<div class='subsection-header'>3.1 연구 질문 & 가설</div>", unsafe_allow_html=True)
-
-    rqs = [
-        ("RQ1", "H1", "#3b82f6",
-         "Evidence-bundled NL2SQL pipeline은 single-SQL baseline보다 더 높은 Insight-Level quality를 달성하는가?",
-         "support SQL bundle과 report-aware selection을 사용하면 SQL accuracy가 비슷하더라도 Insight-Level score는 유의미하게 향상될 것이다."),
-        ("RQ2", "H2", "#a855f7",
-         "GROVER-Insight metric은 generic LLM judge나 vanilla Ragas보다 human judgment와 더 잘 정렬되는가?",
-         "claim decomposition과 numeric verification을 포함한 GROVER-Insight가 더 높은 human correlation을 보일 것이다."),
-        ("RQ3", "H3", "#f59e0b",
-         "SQL-Level ranking과 end-to-end report ranking은 일치하는가?",
-         "동일한 SQL-Level score를 가진 system들 사이에서도 Insight-Level score는 크게 다를 수 있다."),
-    ]
-
-    for rq, hyp, color, question, hypothesis in rqs:
-        with st.expander(f"{rq}: {question[:60]}...", expanded=True):
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.markdown(f"""
-                <div style='padding:14px 18px;background:{color}10;border-radius:10px;border-left:4px solid {color}'>
-                    <div style='font-size:0.75rem;font-weight:700;color:{color};margin-bottom:6px'>{rq} (Research Question)</div>
-                    <p style='color:#374151;margin:0;font-size:0.9rem;line-height:1.65'>{question}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_b:
-                st.markdown(f"""
-                <div style='padding:14px 18px;background:#f0fdf4;border-radius:10px;border-left:4px solid #22c55e'>
-                    <div style='font-size:0.75rem;font-weight:700;color:#15803d;margin-bottom:6px'>{hyp} (Hypothesis)</div>
-                    <p style='color:#374151;margin:0;font-size:0.9rem;line-height:1.65'>{hypothesis}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # Dataset
-    st.markdown("<div class='subsection-header'>3.2 데이터셋 구성 전략</div>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='color:#475569;font-size:0.92rem;line-height:1.7;margin-bottom:16px'>
-    단일 benchmark로 모든 것을 해결하기보다, <b>역할이 다른 benchmark를 조합</b>합니다.
-    </p>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <table>
-    <tr><th>Dataset</th><th>역할</th><th>추천 사용 방식</th></tr>
-    <tr><td><b>BIRD Mini-Dev V2</b></td><td>빠른 개발 및 반복 실험</td><td>메인 development benchmark (780 instances)</td></tr>
-    <tr><td><b>BIRD Dev / selected split</b></td><td>SQL correctness + efficiency 확인</td><td>최종 SQL/DB-level validation</td></tr>
-    <tr><td><b>CORGI</b></td><td>business-domain high-order query 평가</td><td>Insight-Level 핵심 benchmark</td></tr>
-    <tr><td><b>BI-Bench</b></td><td>query taxonomy와 BI framing 참고</td><td>보조 benchmark 또는 taxonomy source</td></tr>
-    <tr><td><b>Spider 2.0-Lite</b></td><td>stress test</td><td>appendix 수준의 robustness 실험</td></tr>
-    <tr><td><b>GROVER-Bridge</b></td><td>human alignment 평가</td><td>소규모 수작업 검증셋 (150~200개)</td></tr>
-    </table>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # Models
-    st.markdown("<div class='subsection-header'>3.3 모델 선택 (Google Colab 환경)</div>", unsafe_allow_html=True)
-
-    models = [
-        ("SQL Generator", "🔷", [
-            ("Qwen2.5-Coder-7B-Instruct", "code generation 특화, SQL 생성에 최우선 추천"),
-            ("Qwen2.5-7B-Instruct", "structured output과 table understanding에도 적합"),
-        ], "#3b82f6"),
-        ("Reporter / Judge", "🔮", [
-            ("Gemma 3 4B IT", "long context와 reasoning에 적합, judge 모델로도 활용"),
-            ("Phi-4-mini-instruct", "128K context 지원, 여러 테이블을 함께 처리할 때 유리"),
-        ], "#a855f7"),
-        ("Multilingual Baseline", "🌐", [
-            ("Llama 3.1 8B Instruct", "multilingual 공식 지원, 한국어 질문 baseline으로 유용"),
-        ], "#06b6d4"),
-    ]
-
-    cols = st.columns(3)
-    for i, (role, icon, model_list, color) in enumerate(models):
-        with cols[i]:
-            items = "".join([f"<div style='padding:10px 12px;background:white;border-radius:8px;margin-bottom:8px;border:1px solid {color}20'>"
-                             f"<div style='font-weight:600;color:#1e293b;font-size:0.85rem'>{name}</div>"
-                             f"<div style='color:#64748b;font-size:0.78rem;margin-top:4px'>{desc}</div>"
-                             f"</div>" for name, desc in model_list])
-            st.markdown(f"""
-            <div style='padding:18px;background:{color}08;border-radius:14px;border:1px solid {color}25;height:100%'>
-                <div style='display:flex;align-items:center;gap:8px;margin-bottom:14px'>
-                    <span style='font-size:1.3rem'>{icon}</span>
-                    <span style='font-weight:700;color:#1e293b;font-size:0.95rem'>{role}</span>
-                </div>
-                {items}
-            </div>
-            """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='card card-green' style='margin-top:16px'>
-        <h4 style='color:#15803d;margin:0 0 10px'>💡 추천 조합 (Colab 기준)</h4>
-        <div style='display:flex;gap:20px;flex-wrap:wrap'>
-            <div><b>단일 모델:</b> Qwen2.5-7B-Instruct</div>
-            <div><b>역할 분리:</b> Qwen2.5-Coder-7B + Phi-4-mini-instruct</div>
-        </div>
-        <p style='color:#374151;margin:8px 0 0;font-size:0.85rem'>
-        모두 4-bit quantization으로 Google Colab에서 실행 가능합니다.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # Baselines
-    st.markdown("<div class='subsection-header'>3.5 Baseline 설계</div>", unsafe_allow_html=True)
-
-    baselines = [
-        ("Baseline A", "One-shot NL2SQL + Direct Answer",
-         "질문과 schema를 넣고 단일 SQL을 생성한 후, 그 결과를 그대로 자연어로 설명합니다.",
-         "가장 단순한 baseline"),
-        ("Baseline B", "Retrieval-pruned Single SQL",
-         "schema/value retrieval로 관련 요소만 추린 뒤 SQL을 생성합니다.",
-         "retrieval의 효과 측정"),
-        ("Baseline C", "Multi-candidate SQL + SQL-only Selector",
-         "여러 SQL candidate를 생성하지만, 최종 선택은 SQL correctness 기준으로만 합니다.",
-         "bundle의 효과 측정"),
-        ("Proposed", "GROVER-Agent",
-         "main SQL + support SQL bundle을 생성하고, report-aware selection과 GROVER metric 기반 verification을 적용합니다.",
-         "제안 시스템"),
-    ]
-    for tag, name, desc, role in baselines:
-        color = "#3b82f6" if tag == "Proposed" else "#6b7280"
-        bg = "#eff6ff" if tag == "Proposed" else "#f8fafc"
-        st.markdown(f"""
-        <div style='padding:16px 20px;background:{bg};border-radius:12px;border:1px solid {"#bfdbfe" if tag == "Proposed" else "#e2e8f0"};
-                    margin-bottom:10px;border-left:4px solid {color}'>
-            <div style='display:flex;justify-content:space-between;align-items:flex-start'>
-                <div>
-                    <span style='font-weight:700;color:{color}'>{tag}</span>
-                    <span style='font-weight:600;color:#1e293b;margin-left:8px'>{name}</span>
-                </div>
-                <span style='font-size:0.78rem;color:{color};background:{color}15;
-                             padding:3px 10px;border-radius:6px'>{role}</span>
-            </div>
-            <p style='color:#475569;margin:8px 0 0;font-size:0.88rem;line-height:1.6'>{desc}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class='example-box'>
-        <div class='example-label'>💡 비교를 통해 검증할 것들</div>
-        <ul style='color:#374151;margin:0;padding-left:18px;line-height:1.8;font-size:0.9rem'>
-            <li>A vs B: retrieval-based pruning이 필요한가?</li>
-            <li>B vs C: multi-candidate generation이 도움이 되는가?</li>
-            <li>C vs Proposed: report-aware selection과 bundle이 필요한가?</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-
-    # Ablation
-    st.markdown("<div class='subsection-header'>3.7 Ablation Study</div>", unsafe_allow_html=True)
-    ablations = [
-        "support SQL 제거",
-        "report-aware selector 제거",
-        "numeric checker 제거",
-        "Coverage metric 제거",
-        "diagnostic query를 descriptive로 축소",
-        "human-verified subset 없이 기존 benchmark만 사용",
-    ]
-    for i, a in enumerate(ablations):
-        st.markdown(f"""
-        <div style='display:flex;align-items:center;gap:12px;padding:10px 14px;background:white;
-                    border-radius:8px;border:1px solid #e2e8f0;margin-bottom:8px'>
-            <span style='min-width:24px;height:24px;background:#f1f5f9;border-radius:50%;
-                         display:flex;align-items:center;justify-content:center;
-                         font-size:0.8rem;font-weight:600;color:#475569'>{i+1}</span>
-            <span style='color:#374151;font-size:0.9rem'>{a}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE: REFERENCES
-# ══════════════════════════════════════════════════════════════════════════════
-elif page == "References":
-    st.markdown("<div class='section-header'>References</div>", unsafe_allow_html=True)
-
-    refs = [
-        ("[1]", "BIRD", "Li et al., 2023",
-         "Can LLM Already Serve as A Database Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs",
-         "https://arxiv.org/abs/2305.03111", "#3b82f6"),
-        ("[2]", "Spider 2.0", "Lei et al., ICLR 2025",
-         "Spider 2.0: Evaluating Language Models on Real-World Enterprise Text-to-SQL Workflows",
-         "https://openreview.net/forum?id=XmProj9cPs", "#8b5cf6"),
-        ("[3]", "BIRD-INTERACT", "Huo et al., 2025",
-         "BIRD-INTERACT: Re-imagining Text-to-SQL Evaluation for Large Language Models via Lens of Dynamic Interactions",
-         "https://arxiv.org/abs/2510.05318", "#06b6d4"),
-        ("[4]", "BI-Bench", "Gupta et al., ACL 2025",
-         "BI-Bench: A Comprehensive Benchmark Dataset and Unsupervised Evaluation for BI Systems",
-         "https://aclanthology.org/2025.acl-industry.90/", "#10b981"),
-        ("[5]", "CORGI", "Li et al., 2025",
-         "A New Text-to-SQL Benchmark for the Business Domain",
-         "https://arxiv.org/abs/2510.07309", "#f59e0b"),
-        ("[6]", "MT-RAIG", "Seo et al., ACL 2025",
-         "MT-RAIG: Novel Benchmark and Evaluation Framework for Retrieval-Augmented Insight Generation over Multiple Tables",
-         "https://aclanthology.org/2025.acl-long.1128/", "#ec4899"),
-        ("[7]", "T2R-Bench", "Zhang et al., EMNLP 2025",
-         "T2R-Bench: A Benchmark for Real World Table-to-Report Task",
-         "https://aclanthology.org/2025.emnlp-main.1141/", "#ef4444"),
-        ("[8]", "SpotIt", "Klopfenstein et al., 2025/2026",
-         "SpotIt: Evaluating Text-to-SQL Evaluation with Formal Verification",
-         "https://arxiv.org/abs/2510.26840", "#64748b"),
-        ("[9]", "Benchmarks are Broken", "Jin et al., CIDR 2026",
-         "Text-to-SQL Benchmarks are Broken: An In-Depth Analysis of BIRD and Spider 2.0-Snow",
-         "https://www.vldb.org/cidrdb/papers/2026/p5-jin.pdf", "#dc2626"),
-        ("[11]", "CHASE-SQL", "Pourreza et al., 2024",
-         "CHASE-SQL: Multi-Path Reasoning and Preference Optimized Candidate Selection in Text-to-SQL",
-         "https://arxiv.org/abs/2410.01943", "#0891b2"),
-        ("[12]", "APEX-SQL", "Cao et al., 2026",
-         "APEX-SQL: Talking to the Data via Agentic Exploration for Text-to-SQL",
-         "https://arxiv.org/abs/2602.16720", "#7c3aed"),
-    ]
-
-    for num, name, authors, title, url, color in refs:
-        st.markdown(f"""
-        <div style='padding:16px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;
-                    margin-bottom:10px;border-left:4px solid {color}'>
-            <div style='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px'>
-                <div>
-                    <span style='font-weight:700;color:{color};font-family:monospace'>{num}</span>
-                    <span style='font-weight:700;color:#1e293b;margin-left:8px'>{name}</span>
-                    <span style='color:#64748b;font-size:0.82rem;margin-left:8px'>— {authors}</span>
-                </div>
-            </div>
-            <p style='color:#374151;margin:0 0 8px;font-size:0.88rem;line-height:1.5;font-style:italic'>{title}</p>
-            <a href='{url}' target='_blank' style='font-size:0.8rem;color:{color};text-decoration:none'>
-                🔗 {url}
-            </a>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='text-align:center;padding:24px;background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0'>
-        <div style='font-size:1.1rem;font-weight:700;color:#1e293b;margin-bottom:8px'>GROVER Project</div>
-        <div style='color:#64748b;font-size:0.88rem'>
-            Generative Reasoning and Objective Verification for End-to-end Reporting<br>
-            NL2SQL end-to-end evaluation framework
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.sidebar.markdown(
+        '<div class="sidebar-note"><strong>앱의 성격</strong><br>설명 목적 앱이며, 예시 수치와 SQL은 이해를 돕기 위한 illustrative content입니다.</div>',
+        unsafe_allow_html=True,
+    )
+
+    if section == "개요":
+        render_home()
+    elif section == "Introduction":
+        render_introduction()
+    elif section == "Methodology":
+        render_methodology()
+    elif section == "Experimental":
+        render_experimental()
+    elif section == "Conclusion":
+        render_conclusion()
+
+
+if __name__ == "__main__":
+    main()
