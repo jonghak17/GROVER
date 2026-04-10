@@ -2,17 +2,27 @@ import streamlit as st
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="GROVER: NL2SQL 프로젝트",
+    page_title="인공지능 이론 및 응용 세미나 Project 1조",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
+
+def render_formula(latex: str, note: str = "") -> None:
+    st.latex(latex)
+    if note:
+        st.markdown(
+            f"<p class='formula-note'>{note}</p>",
+            unsafe_allow_html=True,
+        )
+
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 /* ---- fonts & theme ---- */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
     --bg: #f3ede2;
@@ -38,7 +48,7 @@ st.markdown("""
 }
 
 html, body, [class*="css"] {
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: 'Pretendard', sans-serif;
     color: var(--ink);
 }
 
@@ -62,7 +72,7 @@ h1, h2, h3, h4,
 .section-header,
 .subsection-header,
 .hero-title {
-    font-family: 'Noto Serif KR', serif;
+    font-family: 'Pretendard', sans-serif;
     letter-spacing: -0.02em;
 }
 
@@ -74,6 +84,28 @@ pre,
 .score-card-value,
 .score-vector {
     font-family: 'IBM Plex Mono', monospace;
+}
+
+div[data-testid="stLatex"] {
+    background: #232826;
+    border-left: 4px solid var(--accent-gold);
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+div[data-testid="stLatex"] .katex-display {
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+div[data-testid="stLatex"] .katex,
+div[data-testid="stLatex"] .katex * {
+    color: #efe5d6 !important;
+}
+.formula-note {
+    color: var(--muted);
+    font-size: 0.84rem;
+    margin: -2px 0 12px;
+    line-height: 1.6;
 }
 
 /* ---- sidebar ---- */
@@ -1233,7 +1265,7 @@ elif page == "Methodology":
                     <div class='example-box'>
                         <div class='example-label'>예시</div>
                         <pre style='font-size:0.83rem;color:#374151;margin:0;white-space:pre-wrap;
-                                    font-family:Inter,sans-serif;line-height:1.6'>{ex}</pre>
+                                    font-family:Pretendard,sans-serif;line-height:1.6'>{ex}</pre>
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1324,16 +1356,10 @@ elif page == "Methodology":
         </table>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div class='formula-box'>
-        S<sub>sql</sub> = α₁ · EX + α₂ · TS + α₃ · SF1
-        </div>
-        """, unsafe_allow_html=True)
-        st.markdown("""
-        <p style='color:#64748b;font-size:0.85rem;margin:4px 0 0'>
-        EM은 semantic equivalence를 제대로 반영하지 못하기 때문에 main score에서 제외하고 보조 지표로 사용합니다.
-        </p>
-        """, unsafe_allow_html=True)
+        render_formula(
+            r"S_{\mathrm{sql}} = \alpha_1 \cdot EX + \alpha_2 \cdot TS + \alpha_3 \cdot SF1",
+            "EM은 semantic equivalence를 제대로 반영하지 못하기 때문에 main score에서 제외하고 보조 지표로 사용합니다.",
+        )
 
         st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
@@ -1356,13 +1382,10 @@ elif page == "Methodology":
         </table>
         """, unsafe_allow_html=True)
 
-        st.markdown("""
-        <div class='formula-box'>
-        S<sub>db</sub> = β₁ · R̃VES + β₂ · (1 − R̃etry) + β₃ · (1 − C̃alls)
-        <br><br>
-        <span style='color:#94a3b8;font-size:0.82rem'>※ R̃VES, R̃etry, C̃alls 모두 [0,1] 범위로 정규화한 값</span>
-        </div>
-        """, unsafe_allow_html=True)
+        render_formula(
+            r"S_{\mathrm{db}} = \beta_1 \cdot \widetilde{RVES} + \beta_2 \cdot (1 - \widetilde{Retry}) + \beta_3 \cdot (1 - \widetilde{Calls})",
+            r"\(\widetilde{RVES}\), \(\widetilde{Retry}\), \(\widetilde{Calls}\)는 모두 \([0,1]\) 범위로 정규화한 값입니다.",
+        )
 
         st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
@@ -1378,44 +1401,45 @@ elif page == "Methodology":
             ("(1) Table-Grounded F1 (TG-F1)", "#a855f7",
              "생성된 리포트의 claim이 실제 실행 결과 테이블로 뒷받침되는지 평가합니다. "
              "Ragas Faithfulness의 철학을 계승하지만, retrieved text가 아닌 <b>executed result tables</b>를 근거로 사용합니다.",
-             """TG-P = Σ(c∈Ĉ) 𝟙[c ⊢ R] / |Ĉ|         ← 생성 claim 중 테이블로 지지되는 비율
-TG-R = Σ(c*∈C*) 𝟙[c* covered by y] / |C*|   ← gold claim 중 리포트에 포함된 비율
-TG-F1 = 2 · TG-P · TG-R / (TG-P + TG-R)""",
+             r"""\begin{aligned}
+\mathrm{TG\text{-}P} &= \frac{\sum_{c \in \hat{C}} \mathbb{1}[c \vdash R]}{|\hat{C}|} \\
+\mathrm{TG\text{-}R} &= \frac{\sum_{c^\ast \in C^\ast} \mathbb{1}[c^\ast \text{ is covered by } y]}{|C^\ast|} \\
+\mathrm{TG\text{-}F1} &= \frac{2 \cdot \mathrm{TG\text{-}P} \cdot \mathrm{TG\text{-}R}}{\mathrm{TG\text{-}P} + \mathrm{TG\text{-}R}}
+\end{aligned}""",
+             "생성 claim 중 테이블로 지지되는 비율과, gold claim 중 리포트가 커버한 비율을 함께 반영합니다.",
              '"북미 매출 18% 감소"라는 claim → r₀ 테이블에서 직접 계산 가능 → ✅ supported',
              0.35),
             ("(2) Numeric Consistency (NumAcc)", "#3b82f6",
              "리포트에 포함된 수치 claim의 정확성을 측정합니다. "
              "숫자 하나만 틀려도 전체 리포트의 신뢰성이 크게 떨어지기 때문에 별도로 측정합니다.",
-             "NumAcc = #correct numerical claims / #all numerical claims",
+             r"\mathrm{NumAcc} = \frac{\# \text{ correct numerical claims}}{\# \text{ all numerical claims}}",
+             "수치 claim만 따로 분리해서 정답 비율을 계산합니다.",
              '"18%"라고 했는데 실제는 "17.8%" → 허용 오차 내면 correct로 처리',
              0.30),
             ("(3) Question Coverage (Cov)", "#06b6d4",
              "질문 유형마다 반드시 포함되어야 하는 analytical slot이 모두 채워졌는지 평가합니다. "
              "'말은 자연스럽지만 중요한 요소를 빠뜨린 답변'을 페널티할 수 있습니다.",
-             """Cov = #required slots addressed / #required slots
-
-Descriptive: [직접 답변, 핵심 값, 관련 세분화]
-Diagnostic:  [직접 답변, 추세, 세그먼트, 요인, 한계]""",
+             r"\mathrm{Cov} = \frac{\# \text{ required slots addressed}}{\# \text{ required slots}}",
+             "Descriptive: [직접 답변, 핵심 값, 관련 세분화] / Diagnostic: [직접 답변, 추세, 세그먼트, 요인, 한계]",
              'Diagnostic 질문에서 driver(요인) 설명이 없으면 Cov 점수 감소',
              0.20),
             ("(4) Intent Alignment (IA)", "#f59e0b",
              "질문 의도에 맞는 답변이 생성되었는지 평가합니다. "
              "Descriptive 질문인데 불필요한 recommendation을 길게 생성하거나, "
              "Diagnostic 질문인데 단순 집계값만 나열하면 낮은 점수를 받습니다.",
-             "IA ∈ [0,1]  ←  question type별 rubric으로 judge model이 점수 부여",
+             r"\mathrm{IA} \in [0,1]",
+             "question type별 rubric을 사용해 judge model이 점수를 부여합니다.",
              '"왜 감소했나?" (Diagnostic)인데 "매출 총액은 100억원" (Descriptive 답변)만 하면 낮은 IA 점수',
              0.15),
         ]
 
-        for metric_name, color, desc, formula, ex, weight in insight_metrics:
+        for metric_name, color, desc, formula, note, ex, weight in insight_metrics:
             with st.expander(f"{'🔮 ' if 'TG' in metric_name else '📊 '}{metric_name} (가중치: {int(weight*100)}%)", expanded=(metric_name.startswith("(1)"))):
                 col_a, col_b = st.columns([3, 2])
                 with col_a:
                     st.markdown(f"<p style='color:#374151;font-size:0.92rem;line-height:1.7'>{desc}</p>",
                                 unsafe_allow_html=True)
-                    st.markdown(f"""
-                    <div class='formula-box' style='font-size:0.82rem'>{formula}</div>
-                    """, unsafe_allow_html=True)
+                    render_formula(formula, note)
                 with col_b:
                     st.markdown(f"""
                     <div class='example-box'>
@@ -1429,13 +1453,9 @@ Diagnostic:  [직접 답변, 추세, 세그먼트, 요인, 한계]""",
         # 종합 점수
         st.markdown("<div class='subsection-header'>Insight-Level 종합 Score</div>", unsafe_allow_html=True)
 
-        st.markdown("""
-        <div class='formula-box'>
-        S<sub>insight</sub> = γ₁ · TG-F1 + γ₂ · NumAcc + γ₃ · Cov + γ₄ · IA
-        <br><br>
-        γ₁ + γ₂ + γ₃ + γ₄ = 1
-        </div>
-        """, unsafe_allow_html=True)
+        render_formula(
+            r"\begin{aligned}S_{\mathrm{insight}} &= \gamma_1 \cdot \mathrm{TG\text{-}F1} + \gamma_2 \cdot \mathrm{NumAcc} + \gamma_3 \cdot \mathrm{Cov} + \gamma_4 \cdot \mathrm{IA} \\ \gamma_1 + \gamma_2 + \gamma_3 + \gamma_4 &= 1\end{aligned}"
+        )
 
         weights = [("TG-F1 (근거 충실성)", 35, "#a855f7"),
                    ("NumAcc (숫자 정확성)", 30, "#3b82f6"),
@@ -1460,15 +1480,19 @@ Diagnostic:  [직접 답변, 추세, 세그먼트, 요인, 한계]""",
         st.markdown("""
         <div class='score-vector-panel'>
             <div class='score-vector-panel-label'>GROVER Final Score Vector</div>
-            <div class='score-vector-panel-main'>
-                G = (S<sub>sql</sub>, S<sub>db</sub>, S<sub>insight</sub>)
-            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        render_formula(r"G = \left(S_{\mathrm{sql}}, S_{\mathrm{db}}, S_{\mathrm{insight}}\right)")
+        st.markdown("""
+        <div class='score-vector-panel'>
             <div class='score-vector-panel-sub'>
                 단일 leaderboard 점수가 필요하면:
             </div>
-            <div class='score-vector-panel-main' style='font-size:1.08rem;margin-top:8px;margin-bottom:0'>
-                Ḡ = λ₁ · S<sub>sql</sub> + λ₂ · S<sub>db</sub> + λ₃ · S<sub>insight</sub>
-            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        render_formula(r"\bar{G} = \lambda_1 \cdot S_{\mathrm{sql}} + \lambda_2 \cdot S_{\mathrm{db}} + \lambda_3 \cdot S_{\mathrm{insight}}")
+        st.markdown("""
+        <div class='score-vector-panel'>
             <div class='score-vector-panel-note'>
                 ※ 연구 논문에서는 vector form을 유지하는 것이 권장됩니다.<br>
                 그래야 시스템이 어디서 잘하고 어디서 실패하는지를 분명하게 보여줄 수 있습니다.
