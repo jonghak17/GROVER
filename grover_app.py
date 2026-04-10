@@ -11,240 +11,492 @@ st.set_page_config(
 # ── Global CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-/* ---- fonts & base ---- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* ---- fonts & theme ---- */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap');
+
+:root {
+    --bg: #f3ede2;
+    --bg-soft: #f8f4ec;
+    --surface: rgba(252, 249, 242, 0.9);
+    --surface-strong: #fcfaf5;
+    --ink: #1f2625;
+    --muted: #5f6866;
+    --line: #d6cdbf;
+    --accent: #7b4c3a;
+    --accent-soft: rgba(123, 76, 58, 0.14);
+    --accent-cool: #315a59;
+    --accent-cool-soft: rgba(49, 90, 89, 0.1);
+    --accent-olive: #6c7557;
+    --accent-olive-soft: rgba(108, 117, 87, 0.11);
+    --accent-gold: #a17343;
+    --accent-gold-soft: rgba(161, 115, 67, 0.11);
+    --accent-plum: #6d586d;
+    --accent-plum-soft: rgba(109, 88, 109, 0.1);
+    --danger: #a95a58;
+    --danger-soft: rgba(169, 90, 88, 0.1);
+    --shadow: 0 12px 28px rgba(34, 31, 28, 0.06);
+}
 
 html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--ink);
+}
+
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > .main {
+    background:
+        linear-gradient(rgba(123, 76, 58, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(123, 76, 58, 0.04) 1px, transparent 1px),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-soft) 100%);
+    background-size: 28px 28px, 28px 28px, auto;
+}
+
+.main .block-container {
+    max-width: 1200px;
+    padding-top: 2.2rem;
+    padding-bottom: 4rem;
+}
+
+h1, h2, h3, h4,
+.section-header,
+.subsection-header,
+.hero-title {
+    font-family: 'Noto Serif KR', serif;
+    letter-spacing: -0.02em;
+}
+
+code,
+pre,
+.formula-box,
+.hero-meta-value,
+.stage-code,
+.score-card-value,
+.score-vector {
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 /* ---- sidebar ---- */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(180deg, #27231f 0%, #181512 100%);
+    border-right: 1px solid rgba(239, 229, 214, 0.14);
 }
 [data-testid="stSidebar"] * {
-    color: #e2e8f0 !important;
+    color: #efe5d6 !important;
+}
+[data-testid="stSidebar"] .block-container {
+    padding-top: 1.45rem;
 }
 [data-testid="stSidebar"] .stRadio label {
-    padding: 6px 10px;
-    border-radius: 8px;
-    transition: background 0.2s;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-radius: 0;
+    transition: background 0.2s, border-color 0.2s;
 }
 [data-testid="stSidebar"] .stRadio label:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(239, 229, 214, 0.18);
 }
 
 /* ---- hero banner ---- */
 .hero {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f4c75 100%);
-    border-radius: 20px;
-    padding: 48px 48px 40px;
+    background: linear-gradient(180deg, rgba(252, 249, 242, 0.96) 0%, rgba(245, 237, 226, 0.92) 100%);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 42px 42px 36px;
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow);
+}
+.hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(49, 90, 89, 0.08) 0%, transparent 40%),
+        linear-gradient(90deg, transparent 0%, transparent 58%, rgba(49, 90, 89, 0.08) 58%, rgba(49, 90, 89, 0.08) 59%, transparent 59%);
+    pointer-events: none;
 }
 .hero::after {
     content: "";
     position: absolute;
-    top: -60px; right: -60px;
-    width: 300px; height: 300px;
+    right: 28px;
+    top: 22px;
+    width: 190px;
+    height: 190px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
+    border: 1px solid rgba(49, 90, 89, 0.16);
+    opacity: 0.9;
+}
+.hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2.1fr) minmax(250px, 1fr);
+    gap: 24px;
+    position: relative;
+    z-index: 1;
 }
 .hero-title {
-    font-size: 2.6rem;
+    font-size: 3rem;
     font-weight: 700;
-    color: #f0f9ff;
-    letter-spacing: -0.5px;
-    line-height: 1.15;
+    color: var(--ink);
+    line-height: 1.08;
     margin-bottom: 12px;
 }
 .hero-subtitle {
-    font-size: 1.05rem;
-    color: #7dd3fc;
-    max-width: 680px;
-    line-height: 1.6;
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 720px;
+    line-height: 1.75;
 }
 .hero-badge {
     display: inline-block;
-    background: rgba(56,189,248,0.18);
-    color: #38bdf8;
-    border: 1px solid rgba(56,189,248,0.35);
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent-soft);
     border-radius: 999px;
-    padding: 4px 14px;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    padding: 5px 14px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
     margin-bottom: 18px;
     text-transform: uppercase;
+}
+.hero-panel {
+    background: rgba(31, 38, 37, 0.03);
+    border: 1px solid rgba(31, 38, 37, 0.1);
+    padding: 18px 20px;
+    align-self: start;
+}
+.hero-panel-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.hero-panel-copy {
+    color: var(--ink);
+    font-size: 0.92rem;
+    line-height: 1.75;
+}
+.hero-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+}
+.hero-meta-item {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+    background: rgba(252, 249, 242, 0.8);
+}
+.hero-meta-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.hero-meta-value {
+    margin-top: 7px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--ink);
 }
 
 /* ---- section headers ---- */
 .section-header {
-    font-size: 1.55rem;
+    position: relative;
+    font-size: 1.42rem;
     font-weight: 700;
-    color: #0f172a;
-    padding-bottom: 10px;
-    border-bottom: 3px solid #3b82f6;
-    margin-bottom: 24px;
+    color: var(--ink);
+    padding: 0 0 12px 16px;
+    border-bottom: 1px solid var(--line);
+    margin: 10px 0 24px;
+}
+.section-header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 12px;
+    width: 4px;
+    background: var(--accent-cool);
 }
 .subsection-header {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: #1e3a5f;
-    margin-top: 28px;
+    position: relative;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 30px;
     margin-bottom: 12px;
+    padding-left: 14px;
+}
+.subsection-header::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: var(--accent);
 }
 
 /* ---- info / highlight cards ---- */
 .card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 22px 26px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 22px 24px;
     margin-bottom: 18px;
+    box-shadow: var(--shadow);
 }
 .card-blue {
-    background: linear-gradient(135deg, #eff6ff, #dbeafe);
-    border: 1px solid #bfdbfe;
+    background: linear-gradient(180deg, rgba(49, 90, 89, 0.06), rgba(252, 249, 242, 0.94));
+    border-left: 4px solid var(--accent-cool);
 }
 .card-green {
-    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
-    border: 1px solid #bbf7d0;
+    background: linear-gradient(180deg, rgba(108, 117, 87, 0.08), rgba(252, 249, 242, 0.94));
+    border-left: 4px solid var(--accent-olive);
 }
 .card-purple {
-    background: linear-gradient(135deg, #faf5ff, #ede9fe);
-    border: 1px solid #ddd6fe;
+    background: linear-gradient(180deg, rgba(109, 88, 109, 0.08), rgba(252, 249, 242, 0.94));
+    border-left: 4px solid var(--accent-plum);
 }
 .card-orange {
-    background: linear-gradient(135deg, #fff7ed, #ffedd5);
-    border: 1px solid #fed7aa;
+    background: linear-gradient(180deg, rgba(161, 115, 67, 0.08), rgba(252, 249, 242, 0.94));
+    border-left: 4px solid var(--accent-gold);
 }
 .card-red {
-    background: linear-gradient(135deg, #fff1f2, #ffe4e6);
-    border: 1px solid #fecdd3;
+    background: linear-gradient(180deg, rgba(169, 90, 88, 0.08), rgba(252, 249, 242, 0.94));
+    border-left: 4px solid var(--danger);
 }
 
-/* ---- pipeline steps ---- */
+/* ---- pipeline / stage cards ---- */
 .pipeline-step {
     display: flex;
     align-items: flex-start;
     gap: 18px;
     padding: 18px 20px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 0;
     margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    transition: box-shadow 0.2s;
-}
-.pipeline-step:hover {
-    box-shadow: 0 4px 12px rgba(59,130,246,0.12);
+    box-shadow: var(--shadow);
 }
 .step-number {
     min-width: 38px;
     height: 38px;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
+    background: var(--accent-cool);
+    color: #f4ede0;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
 }
 .step-content h4 {
     margin: 0 0 4px;
-    color: #1e3a5f;
-    font-size: 1rem;
-    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.98rem;
+    font-weight: 700;
 }
 .step-content p {
     margin: 0;
-    color: #475569;
+    color: var(--muted);
     font-size: 0.9rem;
+    line-height: 1.65;
+}
+.stage-card {
+    min-height: 148px;
+    padding: 18px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 3px solid var(--accent-cool);
+    box-shadow: var(--shadow);
+}
+.stage-index {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.stage-title {
+    font-size: 0.94rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 10px 0 6px;
+    line-height: 1.4;
+}
+.stage-code {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: var(--accent-cool);
+    background: var(--accent-cool-soft);
+    padding: 4px 8px;
+    margin-bottom: 10px;
+}
+.stage-copy {
+    color: var(--muted);
+    font-size: 0.82rem;
     line-height: 1.55;
 }
 
 /* ---- metric level cards ---- */
 .metric-level {
-    border-radius: 16px;
-    padding: 24px 28px;
+    border-radius: 0;
+    padding: 22px 24px;
     margin-bottom: 20px;
+    border: 1px solid var(--line);
     border-left: 5px solid;
+    box-shadow: var(--shadow);
 }
 .level-sql {
-    background: #eff6ff;
-    border-color: #3b82f6;
+    background: linear-gradient(180deg, rgba(49, 90, 89, 0.07), rgba(252, 249, 242, 0.92));
+    border-color: var(--accent-cool);
 }
 .level-db {
-    background: #f0fdf4;
-    border-color: #22c55e;
+    background: linear-gradient(180deg, rgba(108, 117, 87, 0.08), rgba(252, 249, 242, 0.92));
+    border-color: var(--accent-olive);
 }
 .level-insight {
-    background: #faf5ff;
-    border-color: #a855f7;
+    background: linear-gradient(180deg, rgba(109, 88, 109, 0.08), rgba(252, 249, 242, 0.92));
+    border-color: var(--accent-plum);
 }
 .metric-level h3 {
     margin: 0 0 8px;
-    font-size: 1.1rem;
+    font-size: 1.08rem;
     font-weight: 700;
 }
 .metric-level p {
     margin: 0;
-    color: #475569;
-    font-size: 0.9rem;
-    line-height: 1.6;
-}
-
-/* ---- formula box ---- */
-.formula-box {
-    background: #1e293b;
-    border-radius: 10px;
-    padding: 16px 22px;
-    margin: 12px 0;
-    font-family: 'JetBrains Mono', monospace;
-    color: #e2e8f0;
+    color: var(--muted);
     font-size: 0.9rem;
     line-height: 1.7;
 }
 
+/* ---- formula box ---- */
+.formula-box {
+    background: #232826;
+    border-left: 4px solid var(--accent-gold);
+    border-radius: 0;
+    padding: 16px 20px;
+    margin: 12px 0;
+    color: #efe5d6;
+    font-size: 0.9rem;
+    line-height: 1.75;
+}
+
 /* ---- example box ---- */
 .example-box {
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-    border: 1px solid #cbd5e1;
-    border-left: 4px solid #f59e0b;
-    border-radius: 0 10px 10px 0;
-    padding: 18px 22px;
+    background: rgba(252, 249, 242, 0.9);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent-gold);
+    border-radius: 0;
+    padding: 18px 20px;
     margin: 14px 0;
 }
 .example-label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: #d97706;
+    color: var(--accent-gold);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.14em;
     margin-bottom: 8px;
 }
 
-/* ---- contribution pill ---- */
+/* ---- contribution cards ---- */
 .contribution {
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--accent-cool);
+    border-radius: 0;
     padding: 18px 22px;
     margin-bottom: 14px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    box-shadow: var(--shadow);
 }
 .contribution-tag {
     display: inline-block;
-    background: #3b82f6;
-    color: white;
-    border-radius: 6px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent-soft);
+    border-radius: 999px;
     padding: 2px 10px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 700;
     margin-bottom: 8px;
+    letter-spacing: 0.12em;
+}
+
+/* ---- score cards ---- */
+.score-card {
+    min-height: 168px;
+    padding: 20px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-top: 4px solid;
+    box-shadow: var(--shadow);
+}
+.score-card-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.score-card-value {
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin: 12px 0 8px;
+}
+.score-card-body {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.6;
+}
+.score-card.sql { border-top-color: var(--accent-cool); }
+.score-card.db { border-top-color: var(--accent-olive); }
+.score-card.insight { border-top-color: var(--accent-plum); }
+.score-vector {
+    text-align: center;
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 1rem;
+}
+.score-vector-panel {
+    padding: 28px 32px;
+    background: #23211f;
+    border-top: 4px solid var(--accent-gold);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+.score-vector-panel-label {
+    color: #bba995;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+.score-vector-panel-main {
+    color: #f2e8da;
+    font-size: 1.35rem;
+    margin: 14px 0 16px;
+}
+.score-vector-panel-sub {
+    color: #d8c8b5;
+    font-size: 0.9rem;
+}
+.score-vector-panel-note {
+    color: #a59785;
+    font-size: 0.82rem;
+    margin-top: 12px;
+    line-height: 1.65;
 }
 
 /* ---- table styling ---- */
@@ -253,43 +505,48 @@ table {
     border-collapse: collapse;
     margin: 16px 0;
     font-size: 0.9rem;
+    background: rgba(252, 249, 242, 0.82);
+    border: 1px solid var(--line);
 }
 th {
-    background: #1e293b;
-    color: white;
-    padding: 10px 14px;
+    background: #23211f;
+    color: #efe5d6;
+    padding: 11px 14px;
     text-align: left;
-    font-weight: 600;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.76rem;
 }
 td {
-    padding: 9px 14px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #334155;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(214, 205, 191, 0.9);
+    color: #33403f;
 }
-tr:nth-child(even) td { background: #f8fafc; }
-tr:hover td { background: #eff6ff; }
+tr:nth-child(even) td { background: rgba(31, 38, 37, 0.02); }
+tr:hover td { background: rgba(49, 90, 89, 0.08); }
 
 /* ---- divider ---- */
 .fancy-divider {
-    height: 2px;
-    background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
-    border-radius: 999px;
-    margin: 32px 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(49, 90, 89, 0.45) 50%, transparent 100%);
+    margin: 34px 0;
 }
 
 /* ---- claim type badge ---- */
 .badge {
     display: inline-block;
-    border-radius: 6px;
+    border-radius: 999px;
     padding: 3px 10px;
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-size: 0.74rem;
+    font-weight: 700;
     margin: 3px;
+    letter-spacing: 0.04em;
 }
-.badge-numeric { background: #dbeafe; color: #1d4ed8; }
-.badge-comparison { background: #dcfce7; color: #15803d; }
-.badge-ranking { background: #fef9c3; color: #854d0e; }
-.badge-diagnostic { background: #fce7f3; color: #9d174d; }
+.badge-numeric { background: var(--accent-cool-soft); color: var(--accent-cool); }
+.badge-comparison { background: var(--accent-olive-soft); color: var(--accent-olive); }
+.badge-ranking { background: var(--accent-gold-soft); color: var(--accent-gold); }
+.badge-diagnostic { background: var(--accent-plum-soft); color: var(--accent-plum); }
 
 /* ---- score weight table ---- */
 .weight-row {
@@ -297,35 +554,73 @@ tr:hover td { background: #eff6ff; }
     align-items: center;
     gap: 14px;
     padding: 10px 0;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid rgba(214, 205, 191, 0.7);
 }
-.weight-label { min-width: 130px; font-weight: 500; color: #334155; font-size: 0.9rem; }
-.weight-bar-bg { flex: 1; height: 10px; background: #e2e8f0; border-radius: 999px; }
+.weight-label { min-width: 130px; font-weight: 500; color: #33403f; font-size: 0.9rem; }
+.weight-bar-bg { flex: 1; height: 10px; background: rgba(31, 38, 37, 0.08); border-radius: 999px; }
 .weight-bar-fill { height: 10px; border-radius: 999px; }
-.weight-pct { min-width: 40px; text-align: right; font-weight: 600; font-size: 0.9rem; color: #1e3a5f; }
+.weight-pct { min-width: 40px; text-align: right; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+
+/* ---- streamlit controls ---- */
+div[data-baseweb="tab-list"] {
+    gap: 6px;
+    margin-bottom: 18px;
+}
+button[data-baseweb="tab"] {
+    border: 1px solid var(--line);
+    border-radius: 0;
+    background: rgba(252, 249, 242, 0.75);
+    color: var(--ink);
+    padding: 10px 14px;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    background: #23211f;
+    color: #efe5d6;
+    border-color: #23211f;
+}
+div[data-testid="stExpander"] {
+    border: 1px solid var(--line);
+    background: rgba(252, 249, 242, 0.78);
+}
+div[data-testid="stExpander"] details summary {
+    background: rgba(31, 38, 37, 0.03);
+}
+
+@media (max-width: 900px) {
+    .hero {
+        padding: 30px 24px 26px;
+    }
+    .hero-grid,
+    .hero-meta {
+        grid-template-columns: 1fr;
+    }
+    .hero-title {
+        font-size: 2.35rem;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ── Sidebar Navigation ────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 🔍 GROVER")
-    st.markdown("<small style='color:#94a3b8;'>NL2SQL End-to-End Framework</small>", unsafe_allow_html=True)
+    st.markdown("### GROVER")
+    st.markdown("<small style='color:#cbbca7;'>Research Interface for End-to-End NL2SQL Reporting</small>", unsafe_allow_html=True)
     st.markdown("---")
     page = st.radio(
         "페이지 선택",
         [
-            "🏠 Overview",
-            "📖 Introduction",
-            "⚙️ Methodology",
-            "🧪 Experimental",
-            "📚 References",
+            "Overview",
+            "Introduction",
+            "Methodology",
+            "Experimental",
+            "References",
         ],
         label_visibility="collapsed",
     )
     st.markdown("---")
     st.markdown("""
-    <small style='color:#64748b;line-height:1.6'>
-    <b style='color:#94a3b8'>GROVER</b><br>
+    <small style='color:#b8ac9a;line-height:1.7'>
+    <b style='color:#efe5d6;letter-spacing:0.08em'>GROVER</b><br>
     Generative Reasoning and<br>
     Objective Verification for<br>
     End-to-end Reporting
@@ -335,21 +630,46 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: OVERVIEW
 # ══════════════════════════════════════════════════════════════════════════════
-if page == "🏠 Overview":
+if page == "Overview":
     st.markdown("""
     <div class='hero'>
-        <div class='hero-badge'>Research Project · NL2SQL</div>
-        <div class='hero-title'>GROVER</div>
-        <div class='hero-subtitle'>
-            Generative Reasoning and Objective Verification for End-to-end Reporting<br>
-            자연어 질문 → SQL 생성 → 결과 분석 → 최종 리포트 생성까지,<br>
-            NL2SQL을 완전한 end-to-end pipeline으로 재정의하는 연구 프로젝트
+        <div class='hero-grid'>
+            <div>
+                <div class='hero-badge'>Research Framework</div>
+                <div class='hero-title'>GROVER</div>
+                <div class='hero-subtitle'>
+                    Generative Reasoning and Objective Verification for End-to-end Reporting<br>
+                    자연어 질문에서 SQL 생성과 결과 해석, 최종 리포트 생성까지 이어지는 전체 흐름을
+                    하나의 평가 단위로 다루는 NL2SQL 연구 프레임워크입니다.
+                </div>
+                <div class='hero-meta'>
+                    <div class='hero-meta-item'>
+                        <div class='hero-meta-label'>Problem Shift</div>
+                        <div class='hero-meta-value'>SQL correctness → analysis reliability</div>
+                    </div>
+                    <div class='hero-meta-item'>
+                        <div class='hero-meta-label'>Evidence Unit</div>
+                        <div class='hero-meta-value'>main SQL + support SQL bundle</div>
+                    </div>
+                    <div class='hero-meta-item'>
+                        <div class='hero-meta-label'>Core Output</div>
+                        <div class='hero-meta-value'>table-grounded report with verifiable claims</div>
+                    </div>
+                </div>
+            </div>
+            <div class='hero-panel'>
+                <div class='hero-panel-label'>Research Thesis</div>
+                <div class='hero-panel-copy'>
+                    핵심은 더 정교한 SQL 하나를 만드는 것이 아니라, 질문을 설명할 수 있는 evidence를
+                    충분히 수집하고 그 근거를 바탕으로 검증 가능한 report를 생성하는 데 있습니다.
+                </div>
+            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     # 핵심 문제 의식
-    st.markdown("<div class='section-header'>💡 이 연구가 다루는 핵심 문제</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Core Problem</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -380,7 +700,7 @@ if page == "🏠 Overview":
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
     # 핵심 파이프라인 개요
-    st.markdown("<div class='section-header'>🔄 NL2SQL → End-to-End Pipeline</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Pipeline Shift</div>", unsafe_allow_html=True)
     st.markdown("""
     <p style='color:#475569;margin-bottom:20px'>
     기존 NL2SQL이 <b>q → z₀</b> (질문 → SQL 하나)에 집중했다면, GROVER는 다음 전체 흐름을 다룹니다.
@@ -389,29 +709,27 @@ if page == "🏠 Overview":
 
     cols = st.columns(5)
     steps = [
-        ("💬", "자연어 질문", "q", "#3b82f6"),
-        ("🗃️", "SQL Bundle 생성", "Z = {z₀, z₁, …, zₖ}", "#8b5cf6"),
-        ("▶️", "DB 실행", "R = {r₀, r₁, …, rₖ}", "#06b6d4"),
-        ("📊", "결과 해석", "테이블 분석", "#10b981"),
-        ("📝", "리포트 생성", "y (최종 답변)", "#f59e0b"),
+        ("01", "Question", "q", "사용자 질문의 의도와 분석 단위를 파악"),
+        ("02", "SQL Bundle", "Z = {z₀, z₁, …, zₖ}", "main query와 support query를 함께 생성"),
+        ("03", "Execution", "R = {r₀, r₁, …, rₖ}", "실행 결과를 검증하고 유효한 evidence 확보"),
+        ("04", "Interpretation", "table analysis", "결과 테이블을 claim 단위로 해석"),
+        ("05", "Reporting", "y", "최종 답변과 caveat를 구조화해 제시"),
     ]
-    arrows = ["→", "→", "→", "→"]
-    for i, (icon, label, sub, color) in enumerate(steps):
+    for i, (idx, label, sub, desc) in enumerate(steps):
         with cols[i]:
             st.markdown(f"""
-            <div style='text-align:center;padding:16px 8px;background:white;border-radius:14px;
-                        border:2px solid {color}20;box-shadow:0 2px 8px {color}15'>
-                <div style='font-size:1.8rem'>{icon}</div>
-                <div style='font-weight:600;color:#1e293b;font-size:0.9rem;margin:6px 0 4px'>{label}</div>
-                <div style='font-size:0.75rem;color:{color};font-family:monospace;background:{color}10;
-                            padding:3px 8px;border-radius:6px;display:inline-block'>{sub}</div>
+            <div class='stage-card'>
+                <div class='stage-index'>Stage {idx}</div>
+                <div class='stage-title'>{label}</div>
+                <div class='stage-code'>{sub}</div>
+                <div class='stage-copy'>{desc}</div>
             </div>
             """, unsafe_allow_html=True)
 
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
 
     # 4대 Contribution
-    st.markdown("<div class='section-header'>🎯 핵심 Contribution 4가지</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Contributions</div>", unsafe_allow_html=True)
 
     contributions = [
         ("C1", "End-to-End Problem Reformulation",
@@ -434,7 +752,7 @@ if page == "🏠 Overview":
 
     # GROVER Score Vector
     st.markdown("<div class='fancy-divider'></div>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header'>📐 GROVER Score Vector</div>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>Score Vector</div>", unsafe_allow_html=True)
     st.markdown("""
     <p style='color:#475569;margin-bottom:16px'>
     GROVER는 단일 점수 대신 세 축의 <b>score vector</b>를 기본 출력으로 사용합니다.
@@ -445,38 +763,40 @@ if page == "🏠 Overview":
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown("""
-        <div style='text-align:center;padding:24px 16px;background:linear-gradient(135deg,#eff6ff,#dbeafe);
-                    border-radius:16px;border:1px solid #bfdbfe'>
-            <div style='font-size:2rem'>🔷</div>
-            <div style='font-weight:700;color:#1d4ed8;font-size:1.05rem;margin:8px 0 4px'>S_sql</div>
-            <div style='color:#3b82f6;font-size:0.85rem'>SQL-Level Score</div>
-            <div style='color:#475569;font-size:0.82rem;margin-top:8px'>문법 · 실행 정확도</div>
+        <div class='score-card sql'>
+            <div class='score-card-label'>Baseline Layer</div>
+            <div class='score-card-value'>S_sql</div>
+            <div class='score-card-body'>
+                SQL-Level Score<br>
+                문법 정확도와 semantic execution correctness를 측정합니다.
+            </div>
         </div>
         """, unsafe_allow_html=True)
     with c2:
         st.markdown("""
-        <div style='text-align:center;padding:24px 16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);
-                    border-radius:16px;border:1px solid #bbf7d0'>
-            <div style='font-size:2rem'>🟢</div>
-            <div style='font-weight:700;color:#15803d;font-size:1.05rem;margin:8px 0 4px'>S_db</div>
-            <div style='color:#22c55e;font-size:0.85rem'>DB-Level Score</div>
-            <div style='color:#475569;font-size:0.82rem;margin-top:8px'>실행 효율성 · retry 수</div>
+        <div class='score-card db'>
+            <div class='score-card-label'>System Layer</div>
+            <div class='score-card-value'>S_db</div>
+            <div class='score-card-body'>
+                DB-Level Score<br>
+                실행 시간, retry 수, DB call efficiency를 함께 봅니다.
+            </div>
         </div>
         """, unsafe_allow_html=True)
     with c3:
         st.markdown("""
-        <div style='text-align:center;padding:24px 16px;background:linear-gradient(135deg,#faf5ff,#ede9fe);
-                    border-radius:16px;border:1px solid #ddd6fe'>
-            <div style='font-size:2rem'>🔮</div>
-            <div style='font-weight:700;color:#7e22ce;font-size:1.05rem;margin:8px 0 4px'>S_insight</div>
-            <div style='color:#a855f7;font-size:0.85rem'>Insight-Level Score</div>
-            <div style='color:#475569;font-size:0.82rem;margin-top:8px'>신뢰성 · 정확도 · 커버리지</div>
+        <div class='score-card insight'>
+            <div class='score-card-label'>User-Facing Layer</div>
+            <div class='score-card-value'>S_insight</div>
+            <div class='score-card-body'>
+                Insight-Level Score<br>
+                groundedness, numeric correctness, coverage를 포함합니다.
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style='text-align:center;margin-top:16px;padding:14px;background:#f8fafc;border-radius:10px;
-                border:1px solid #e2e8f0;font-family:monospace;font-size:1rem;color:#1e293b'>
+    <div class='score-vector'>
         G = (S<sub>sql</sub>, S<sub>db</sub>, S<sub>insight</sub>)
     </div>
     """, unsafe_allow_html=True)
@@ -485,8 +805,8 @@ if page == "🏠 Overview":
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: INTRODUCTION
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "📖 Introduction":
-    st.markdown("<div class='section-header'>📖 Introduction</div>", unsafe_allow_html=True)
+elif page == "Introduction":
+    st.markdown("<div class='section-header'>Introduction</div>", unsafe_allow_html=True)
 
     st.markdown("""
     <div class='card card-blue'>
@@ -591,8 +911,8 @@ elif page == "📖 Introduction":
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: METHODOLOGY
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "⚙️ Methodology":
-    st.markdown("<div class='section-header'>⚙️ Methodology</div>", unsafe_allow_html=True)
+elif page == "Methodology":
+    st.markdown("<div class='section-header'>Methodology</div>", unsafe_allow_html=True)
     st.markdown("""
     <p style='color:#475569;margin-bottom:24px;font-size:0.95rem;line-height:1.7'>
     Methodology는 크게 4개의 Part로 구성됩니다.
@@ -601,12 +921,12 @@ elif page == "⚙️ Methodology":
     """, unsafe_allow_html=True)
 
     tabs = st.tabs([
-        "📐 2.1 문제 정의",
-        "🔄 2.2 전체 파이프라인",
-        "🗃️ 2.3 SQL Bundle",
-        "📊 2.4 테이블 분석",
-        "📏 2.5 GROVER Metric",
-        "👥 2.6 인간 평가",
+        "2.1 문제 정의",
+        "2.2 전체 파이프라인",
+        "2.3 SQL Bundle",
+        "2.4 테이블 분석",
+        "2.5 GROVER Metric",
+        "2.6 인간 평가",
     ])
 
     # ── Tab 1: 문제 정의 ─────────────────────────────────────────────────────
@@ -1138,19 +1458,18 @@ Diagnostic:  [직접 답변, 추세, 세그먼트, 요인, 한계]""",
 
         # 최종 G
         st.markdown("""
-        <div style='background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:16px;padding:28px 32px;
-                    text-align:center'>
-            <div style='color:#94a3b8;font-size:0.85rem;margin-bottom:12px'>GROVER 최종 Score Vector</div>
-            <div style='font-family:monospace;font-size:1.4rem;color:white;font-weight:600;margin-bottom:16px'>
+        <div class='score-vector-panel'>
+            <div class='score-vector-panel-label'>GROVER Final Score Vector</div>
+            <div class='score-vector-panel-main'>
                 G = (S<sub>sql</sub>, S<sub>db</sub>, S<sub>insight</sub>)
             </div>
-            <div style='color:#7dd3fc;font-size:0.9rem'>
+            <div class='score-vector-panel-sub'>
                 단일 leaderboard 점수가 필요하면:
             </div>
-            <div style='font-family:monospace;font-size:1.1rem;color:#e2e8f0;margin-top:8px'>
+            <div class='score-vector-panel-main' style='font-size:1.08rem;margin-top:8px;margin-bottom:0'>
                 Ḡ = λ₁ · S<sub>sql</sub> + λ₂ · S<sub>db</sub> + λ₃ · S<sub>insight</sub>
             </div>
-            <div style='color:#94a3b8;font-size:0.82rem;margin-top:12px'>
+            <div class='score-vector-panel-note'>
                 ※ 연구 논문에서는 vector form을 유지하는 것이 권장됩니다.<br>
                 그래야 시스템이 어디서 잘하고 어디서 실패하는지를 분명하게 보여줄 수 있습니다.
             </div>
@@ -1230,8 +1549,8 @@ Diagnostic:  [직접 답변, 추세, 세그먼트, 요인, 한계]""",
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: EXPERIMENTAL
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "🧪 Experimental":
-    st.markdown("<div class='section-header'>🧪 Experimental Design</div>", unsafe_allow_html=True)
+elif page == "Experimental":
+    st.markdown("<div class='section-header'>Experimental Design</div>", unsafe_allow_html=True)
 
     # Research Questions
     st.markdown("<div class='subsection-header'>3.1 연구 질문 & 가설</div>", unsafe_allow_html=True)
@@ -1412,8 +1731,8 @@ elif page == "🧪 Experimental":
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE: REFERENCES
 # ══════════════════════════════════════════════════════════════════════════════
-elif page == "📚 References":
-    st.markdown("<div class='section-header'>📚 References</div>", unsafe_allow_html=True)
+elif page == "References":
+    st.markdown("<div class='section-header'>References</div>", unsafe_allow_html=True)
 
     refs = [
         ("[1]", "BIRD", "Li et al., 2023",
