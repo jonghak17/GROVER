@@ -8,7 +8,7 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="GROVER Explainer",
+    page_title="인공지능 이론 및 응용 세미나 1조",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
