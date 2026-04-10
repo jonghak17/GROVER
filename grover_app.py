@@ -944,7 +944,6 @@ def render_home() -> None:
         """
         <div class="hero">
             <div class="eyebrow">GROVER EXPLAINER</div>
-            <h1>SQL을 잘 만드는지에서, 결과를 잘 설명하는지로</h1>
             <p>
                 이 앱은 업로드한 GROVER 프로젝트 문서를 처음 보는 사람도 읽기 쉽도록 다시 구성한 설명 페이지입니다.
                 핵심 메시지는 단순합니다. <strong>좋은 NL2SQL 시스템</strong>은 SQL만 맞히는 시스템이 아니라,
